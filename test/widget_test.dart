@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:front/main.dart';
 
 void main() {
-  testWidgets('App shows text input and send button', (WidgetTester tester) async {
+  testWidgets('App shows text input and send button',
+      (WidgetTester tester) async {
     // Build and render the app
     await tester.pumpWidget(const MyApp());
 

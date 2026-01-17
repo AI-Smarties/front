@@ -17,7 +17,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -36,12 +35,13 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  static const bool useLocalBackend = true; // Change to false when using staging-prod
+  static const bool useLocalBackend =
+      true; // Change to false when using staging-prod
 
   static final Uri backendUrl = useLocalBackend
       ? Uri.parse("http://127.0.0.1:8000/api/message/")
-      : Uri.parse("https://g1-smart-glasses-backend-ohtuprojekti-staging.ext.ocp-prod-0.k8s.it.helsinki.fi/api/message/");
-
+      : Uri.parse(
+          "https://g1-smart-glasses-backend-ohtuprojekti-staging.ext.ocp-prod-0.k8s.it.helsinki.fi/api/message/");
 
   Future<void> _sendText() async {
     final text = _controller.text.trim();
@@ -55,11 +55,13 @@ class _HomePageState extends State<HomePage> {
     final url = backendUrl;
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"text": text}),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            url,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({"text": text}),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -89,12 +91,12 @@ class _HomePageState extends State<HomePage> {
               decoration: const InputDecoration(labelText: "Kirjoita viesti"),
             ),
             const SizedBox(height: 16),
-            _isLoading 
-              ? const CircularProgressIndicator()
-              : ElevatedButton(
-                  onPressed: _sendText,
-                  child: const Text("Lähetä"),
-                ),
+            _isLoading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _sendText,
+                    child: const Text("Lähetä"),
+                  ),
             const SizedBox(height: 24),
             Text("Vastaus:", style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
