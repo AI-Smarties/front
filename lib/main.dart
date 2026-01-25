@@ -38,14 +38,10 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  static const bool useLocalBackend =
-      false; // Change to false when using staging-prod
-
-  static final Uri backendUrl = useLocalBackend
-      ? Uri.parse('http://127.0.0.1:8000/api/message/')
-      : Uri.parse(
-          'https://g1-smart-glasses-backend-ohtuprojekti-staging.ext.ocp-prod-0.k8s.it.helsinki.fi/api/message/',
-        );
+// Uses config_dev.json / config_staging.json for environment variables
+  static final Uri backendUrl = Uri.parse(
+    const String.fromEnvironment('API_URL'),
+  );
 
   Future<void> _sendTextToGlasses(String text) async {
     if (_glassManager.isConnected) {
@@ -62,12 +58,10 @@ class _HomePageState extends State<HomePage> {
       _responseText = '';
     });
 
-    final url = backendUrl;
-
     try {
       final response = await http
           .post(
-            url,
+            backendUrl.resolve('/api/message/'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'text': text}),
           )

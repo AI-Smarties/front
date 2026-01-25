@@ -45,3 +45,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/app/.*/*
+
+
+config_dev.json
+config_staging.json
+config_test.json
