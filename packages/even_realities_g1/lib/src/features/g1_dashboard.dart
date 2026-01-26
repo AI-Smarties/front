@@ -124,7 +124,6 @@ class G1Dashboard {
     await _manager.sendCommand(command);
   }
 
-
   /// Hide the dashboard.
   ///
   /// This hides the dashboard display using the hardware set command.
@@ -242,7 +241,7 @@ class G1Dashboard {
 
     // First set dashboard to full layout (matches fahrplan reference)
     await setLayout(G1DashboardLayout.full);
-    
+
     // Then send the calendar item
     await _manager.sendCommand(calendar.buildDashboardCommand());
   }

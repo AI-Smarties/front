@@ -158,14 +158,14 @@ class G1Manager {
     Duration timeout = const Duration(seconds: 30),
   }) async {
     if (!await FlutterBluePlus.isSupported) {
-      final msg = 'Bluetooth is not supported on this device';
+      const msg = 'Bluetooth is not supported on this device';
       onUpdate?.call(msg);
       throw Exception(msg);
     }
 
     final adapterState = await FlutterBluePlus.adapterState.first;
     if (adapterState != BluetoothAdapterState.on) {
-      final msg = 'Bluetooth is turned off';
+      const msg = 'Bluetooth is turned off';
       onUpdate?.call(msg);
       throw Exception(msg);
     }
@@ -184,7 +184,8 @@ class G1Manager {
 
     // First check for already connected/bonded devices
     onUpdate?.call('Checking for paired glasses...');
-    final connected = await _checkConnectedDevices(onUpdate, onGlassesFound, onConnected);
+    final connected =
+        await _checkConnectedDevices(onUpdate, onGlassesFound, onConnected);
     if (connected) {
       return;
     }
@@ -202,12 +203,13 @@ class G1Manager {
       // Check system connected devices
       final connectedDevices = await FlutterBluePlus.systemDevices([]);
       debugPrint('Found ${connectedDevices.length} system connected devices');
-      
+
       for (final device in connectedDevices) {
         final name = device.platformName;
         debugPrint('Checking connected device: $name');
-        
-        if (name.contains(BluetoothConstants.leftGlassPattern) && _leftGlass == null) {
+
+        if (name.contains(BluetoothConstants.leftGlassPattern) &&
+            _leftGlass == null) {
           debugPrint('Found already-connected left glass: $name');
           _leftGlass = G1Glass(
             name: name,
@@ -218,7 +220,8 @@ class G1Manager {
           await _leftGlass!.connect();
           _setupReconnect(_leftGlass!);
           onUpdate?.call('Left glass found (already paired): $name');
-        } else if (name.contains(BluetoothConstants.rightGlassPattern) && _rightGlass == null) {
+        } else if (name.contains(BluetoothConstants.rightGlassPattern) &&
+            _rightGlass == null) {
           debugPrint('Found already-connected right glass: $name');
           _rightGlass = G1Glass(
             name: name,
@@ -235,12 +238,13 @@ class G1Manager {
       // Check bonded devices as well
       final bondedDevices = await FlutterBluePlus.bondedDevices;
       debugPrint('Found ${bondedDevices.length} bonded devices');
-      
+
       for (final device in bondedDevices) {
         final name = device.platformName;
         debugPrint('Checking bonded device: $name');
-        
-        if (name.contains(BluetoothConstants.leftGlassPattern) && _leftGlass == null) {
+
+        if (name.contains(BluetoothConstants.leftGlassPattern) &&
+            _leftGlass == null) {
           debugPrint('Found bonded left glass: $name');
           _leftGlass = G1Glass(
             name: name,
@@ -251,7 +255,8 @@ class G1Manager {
           await _leftGlass!.connect();
           _setupReconnect(_leftGlass!);
           onUpdate?.call('Left glass found (bonded): $name');
-        } else if (name.contains(BluetoothConstants.rightGlassPattern) && _rightGlass == null) {
+        } else if (name.contains(BluetoothConstants.rightGlassPattern) &&
+            _rightGlass == null) {
           debugPrint('Found bonded right glass: $name');
           _rightGlass = G1Glass(
             name: name,
@@ -266,11 +271,13 @@ class G1Manager {
       }
 
       // Check if both glasses are now connected
-      if (_leftGlass != null && _rightGlass != null &&
-          _leftGlass!.isConnected && _rightGlass!.isConnected) {
+      if (_leftGlass != null &&
+          _rightGlass != null &&
+          _leftGlass!.isConnected &&
+          _rightGlass!.isConnected) {
         _connectionCallbackFired = true;
         _isScanning = false;
-        
+
         onGlassesFound?.call(_leftGlass!.name, _rightGlass!.name);
         _connectionStateController.add(G1ConnectionEvent(
           state: G1ConnectionState.connected,
@@ -315,9 +322,10 @@ class G1Manager {
           final deviceName = result.device.platformName;
           final advName = result.advertisementData.advName;
           final name = deviceName.isNotEmpty ? deviceName : advName;
-          
+
           if (name.isNotEmpty) {
-            debugPrint('Found device: $name (platformName: $deviceName, advName: $advName)');
+            debugPrint(
+                'Found device: $name (platformName: $deviceName, advName: $advName)');
             _handleDeviceFound(
                 result, name, onUpdate, onGlassesFound, onConnected);
           }
@@ -372,12 +380,12 @@ class G1Manager {
     if (glass != null) {
       await glass.connect();
       _setupReconnect(glass);
-      
+
       // Check if both glasses are now connected after this connection completes
       _checkBothConnected(onUpdate, onGlassesFound, onConnected);
     }
   }
-  
+
   void _checkBothConnected(
     OnStatusUpdate? onUpdate,
     OnGlassesFound? onGlassesFound,
@@ -385,19 +393,21 @@ class G1Manager {
   ) {
     // Prevent duplicate callbacks
     if (_connectionCallbackFired) return;
-    
+
     // Check if both glasses are found and connected
-    if (_leftGlass != null && _rightGlass != null &&
-        _leftGlass!.isConnected && _rightGlass!.isConnected) {
+    if (_leftGlass != null &&
+        _rightGlass != null &&
+        _leftGlass!.isConnected &&
+        _rightGlass!.isConnected) {
       _connectionCallbackFired = true;
-      
+
       if (_isScanning) {
         _isScanning = false;
         stopScan();
       }
 
       onGlassesFound?.call(_leftGlass!.name, _rightGlass!.name);
-      
+
       _connectionStateController.add(G1ConnectionEvent(
         state: G1ConnectionState.connected,
         leftGlassName: _leftGlass!.name,
@@ -441,7 +451,7 @@ class G1Manager {
         (_leftGlass == null || _rightGlass == null)) {
       _retryCount++;
       debugPrint(
-          'Retrying scan (${_retryCount}/${BluetoothConstants.maxScanRetries})');
+          'Retrying scan ($_retryCount/${BluetoothConstants.maxScanRetries})');
       await _startScan(onUpdate, onGlassesFound, onConnected, timeout);
     } else {
       _isScanning = false;

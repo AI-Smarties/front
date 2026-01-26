@@ -101,7 +101,7 @@ class G1NoteModel {
 /// Supported icons for notes
 class NoteSupportedIcons {
   NoteSupportedIcons._();
-  
+
   static const String checkbox = '☐';
   static const String check = '​✓';
 }

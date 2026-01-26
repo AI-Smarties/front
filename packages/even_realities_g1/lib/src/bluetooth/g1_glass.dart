@@ -86,7 +86,8 @@ class G1Glass {
 
     if (_uartRx != null) {
       await _uartRx!.setNotifyValue(true);
-      _notificationSubscription = _uartRx!.lastValueStream.listen(_handleNotification);
+      _notificationSubscription =
+          _uartRx!.lastValueStream.listen(_handleNotification);
       debugPrint('[$side Glass] UART RX notifications enabled');
     } else {
       debugPrint('[$side Glass] UART RX not found');

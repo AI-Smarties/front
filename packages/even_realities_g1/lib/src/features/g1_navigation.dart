@@ -131,7 +131,8 @@ class G1Navigation {
     return Uint8List.fromList(data);
   }
 
-  List<Uint8List> _buildPrimaryImageCommands(List<int> image, List<int> overlay) {
+  List<Uint8List> _buildPrimaryImageCommands(
+      List<int> image, List<int> overlay) {
     const partType2 = 0x02;
     final combinedBits = [...image, ...overlay];
     final imageBytes = _runLengthEncode(combinedBits);
@@ -160,7 +161,8 @@ class G1Navigation {
     return result;
   }
 
-  List<Uint8List> _buildSecondaryImageCommands(List<int> image, List<int> overlay) {
+  List<Uint8List> _buildSecondaryImageCommands(
+      List<int> image, List<int> overlay) {
     const partType3 = 0x03;
     final imageBytes = [...image, ...overlay];
 

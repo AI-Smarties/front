@@ -74,7 +74,8 @@ class G1NotificationModel {
 
   /// Serialize to bytes
   Uint8List toBytes() {
-    return Uint8List.fromList(utf8.encode(jsonEncode({'ncs_notification': toJson()})));
+    return Uint8List.fromList(
+        utf8.encode(jsonEncode({'ncs_notification': toJson()})));
   }
 
   /// Build chunked notification packets for transmission.

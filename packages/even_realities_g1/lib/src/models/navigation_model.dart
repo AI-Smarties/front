@@ -1,4 +1,3 @@
-
 /// Navigation turn icons
 /// Based on fahrplan reference implementation
 enum G1NavigationTurn {

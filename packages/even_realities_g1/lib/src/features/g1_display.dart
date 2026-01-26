@@ -80,11 +80,13 @@ class G1Display {
       }
 
       final textBytes = buffer.toString().codeUnits;
-      final totalChunks = (textBytes.length / TextFormatter.maxChunkSize).ceil();
+      final totalChunks =
+          (textBytes.length / TextFormatter.maxChunkSize).ceil();
 
       for (int i = 0; i < totalChunks; i++) {
         final start = i * TextFormatter.maxChunkSize;
-        final end = (start + TextFormatter.maxChunkSize).clamp(0, textBytes.length);
+        final end =
+            (start + TextFormatter.maxChunkSize).clamp(0, textBytes.length);
         final payloadChunk = textBytes.sublist(start, end);
 
         // Screen status: New content (0x01) + Text Show (0x70) = 0x71
@@ -111,7 +113,8 @@ class G1Display {
     return allChunks;
   }
 
-  List<List<int>> _buildAIResponsePackets(String text, {bool isComplete = true}) {
+  List<List<int>> _buildAIResponsePackets(String text,
+      {bool isComplete = true}) {
     final lines = TextFormatter.formatTextByLength(text, maxLength: 20);
     final totalPages = ((lines.length + 4) ~/ 5).clamp(1, 999);
 
@@ -121,7 +124,9 @@ class G1Display {
         ? G1ScreenStatus.displayComplete
         : (G1ScreenStatus.displaying | G1ScreenStatus.newContent);
 
-    for (int pn = 1, lineIndex = 0; lineIndex < lines.length; pn++, lineIndex += 5) {
+    for (int pn = 1, lineIndex = 0;
+        lineIndex < lines.length;
+        pn++, lineIndex += 5) {
       var pageLines = lines.sublist(
         lineIndex,
         (lineIndex + 5) > lines.length ? lines.length : (lineIndex + 5),

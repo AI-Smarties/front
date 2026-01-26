@@ -124,7 +124,8 @@ class G1VoiceNote {
 
   void _handleQuickNoteCommand(GlassSide side, List<int> data) {
     try {
-      final notification = _parseVoiceNoteNotification(Uint8List.fromList(data));
+      final notification =
+          _parseVoiceNoteNotification(Uint8List.fromList(data));
       onNotesUpdated?.call(notification);
 
       if (notification.isNotEmpty) {

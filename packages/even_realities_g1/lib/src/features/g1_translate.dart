@@ -124,7 +124,7 @@ ${fromLanguage.code.toUpperCase()} → ${toLanguage.code.toUpperCase()}''';
       final line = lines[i];
 
       final lineBytes = line.codeUnits;
-      
+
       final chunk = Uint8List(5 + lineBytes.length);
       chunk[0] = G1Commands.sendResult;
       chunk[1] = isFirst ? 0x01 : 0x00;
@@ -144,7 +144,8 @@ ${fromLanguage.code.toUpperCase()} → ${toLanguage.code.toUpperCase()}''';
     return chunks;
   }
 
-  List<Uint8List> _createStreamingChunks(String text, {required bool isComplete}) {
+  List<Uint8List> _createStreamingChunks(String text,
+      {required bool isComplete}) {
     final chunks = <Uint8List>[];
     final textBytes = text.codeUnits;
 
@@ -153,8 +154,9 @@ ${fromLanguage.code.toUpperCase()} → ${toLanguage.code.toUpperCase()}''';
 
     while (offset < textBytes.length) {
       final isFirst = offset == 0;
-      final chunkSize =
-          (offset + maxChunkSize > textBytes.length) ? textBytes.length - offset : maxChunkSize;
+      final chunkSize = (offset + maxChunkSize > textBytes.length)
+          ? textBytes.length - offset
+          : maxChunkSize;
       final isLast = isComplete && (offset + chunkSize >= textBytes.length);
 
       final chunkData = textBytes.sublist(offset, offset + chunkSize);

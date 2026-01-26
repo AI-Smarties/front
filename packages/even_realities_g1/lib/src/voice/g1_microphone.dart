@@ -79,7 +79,7 @@ class G1Microphone {
     // Set active BEFORE sending command to avoid race condition where
     // audio packets arrive before _isActive is set
     _isActive = true;
-    
+
     // Send open mic command to right glass only (per original implementation)
     await _manager.rightGlass?.sendData([G1Commands.openMic, 0x01]);
   }

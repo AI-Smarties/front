@@ -14,7 +14,7 @@ class G1Bitmap {
   /// Canvas width for display
   static const int canvasWidth = 576;
 
-  /// Canvas height for display  
+  /// Canvas height for display
   static const int canvasHeight = 136;
 
   /// Maximum width of the display
@@ -90,7 +90,8 @@ class G1Bitmap {
     }
 
     try {
-      await _manager.sendCommand(bmpCommand, needsAck: false, delay: const Duration(milliseconds: 8));
+      await _manager.sendCommand(bmpCommand,
+          needsAck: false, delay: const Duration(milliseconds: 8));
       return bmpCommand;
     } catch (e) {
       return null;
@@ -99,7 +100,8 @@ class G1Bitmap {
 
   /// Send packet end marker
   Future<void> _sendPacketEndPacket() async {
-    await _manager.sendCommand([G1Commands.packetEnd, 0x0d, 0x0e], needsAck: false);
+    await _manager
+        .sendCommand([G1Commands.packetEnd, 0x0d, 0x0e], needsAck: false);
   }
 
   /// Send CRC packet for verification
@@ -107,7 +109,7 @@ class G1Bitmap {
     final crc = Crc32();
     crc.update(packets);
     final crc32Checksum = crc.getValue() & 0xFFFFFFFF;
-    
+
     final crc32Bytes = Uint8List(4);
     crc32Bytes[0] = (crc32Checksum >> 24) & 0xFF;
     crc32Bytes[1] = (crc32Checksum >> 16) & 0xFF;

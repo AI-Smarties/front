@@ -6,19 +6,19 @@ import '../protocol/commands.dart';
 enum G1Brightness {
   /// Auto brightness (sensor-based)
   auto(0),
-  
+
   /// Level 1 - Darkest
   level1(1),
-  
+
   /// Level 2
   level2(2),
-  
+
   /// Level 3
   level3(3),
-  
+
   /// Level 4
   level4(4),
-  
+
   /// Level 5 - Brightest
   level5(5);
 

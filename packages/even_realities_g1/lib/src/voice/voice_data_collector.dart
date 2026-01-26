@@ -1,4 +1,3 @@
-
 /// Collects and manages voice data chunks from the G1 microphone.
 ///
 /// Audio from the G1 glasses is sent in sequential chunks that need to be
@@ -6,11 +5,9 @@
 class VoiceDataCollector {
   final Map<int, List<int>> _chunks = {};
   int _seqAdd = 0;
-  bool _isRecording = false;
+  bool isRecording = false;
 
   /// Whether collection is currently active.
-  bool get isRecording => _isRecording;
-  set isRecording(bool value) => _isRecording = value;
 
   /// Add a chunk of audio data.
   ///

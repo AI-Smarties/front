@@ -45,7 +45,8 @@ class G1Notifications {
   }) async {
     final notification = G1NotificationModel(
       messageId: DateTime.now().millisecondsSinceEpoch,
-      appIdentifier: appIdentifier ?? appName.toLowerCase().replaceAll(' ', '.'),
+      appIdentifier:
+          appIdentifier ?? appName.toLowerCase().replaceAll(' ', '.'),
       title: title,
       subtitle: subtitle ?? '',
       message: message,

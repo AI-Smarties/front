@@ -60,7 +60,8 @@ class TextFormatter {
 
       while (startIndex < lineLength) {
         int endIndex = lineLength;
-        final lineWidth = _calculateSubstringWidth(rawLine, startIndex, endIndex);
+        final lineWidth =
+            _calculateSubstringWidth(rawLine, startIndex, endIndex);
 
         if (lineWidth <= effectiveWidth) {
           lines.add(rawLine.substring(startIndex));
