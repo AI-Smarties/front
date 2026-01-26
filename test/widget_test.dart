@@ -18,4 +18,14 @@ void main() {
     // Verify that the app title is shown
     expect(find.text('Smarties App'), findsOneWidget);
   });
+
+  testWidgets('App shows glasses connection button', (tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    // Initially shows connect button (not connected)
+    expect(find.text('Yhdistä laseihin'), findsOneWidget);
+
+    // Should have 2 buttons: Lähetä + Yhdistä
+    expect(find.byType(ElevatedButton), findsNWidgets(2));
+  });
 }

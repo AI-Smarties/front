@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "App (Staging)",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define-from-file=config_staging.json"]
+    },
+    {
+      "name": "App (Dev)",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define-from-file=config_dev.json"]
+    },
+    {
+      "name": "App (Test)",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define-from-file=config_test.json"]
+    }
+  ]
+}
