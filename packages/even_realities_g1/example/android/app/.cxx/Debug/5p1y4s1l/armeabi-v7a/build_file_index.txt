@@ -1,1 +1,0 @@
-/Users/emingenc/Documents/even_realities_g1/example/android/app/src/main/cpp/CMakeLists.txt
