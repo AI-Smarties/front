@@ -131,13 +131,18 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+
+  // VALITSE TÄMÄN MUKAAN MISSÄ FLUTTERIA AJETAAN:
+  // Emulaattori: 10.0.2.2 | Puhelin: Tietokoneesi IP | Web: localhost
+  final String _baseUrl = "10.0.2.2";
+
   /* ================= WEBSOCKET ================= */
 
   Future<void> _connectWebSocket() async {
     _connectStartTs = DateTime.now().millisecondsSinceEpoch.toDouble();
     _connectLatency = "";
 
-    final uri = Uri.parse("ws://10.227.175.84:$_backendPort/ws/audio/");
+    final uri = Uri.parse("ws://$_baseUrl:$_backendPort/ws/audio/");
 
     _controlChannel = WebSocketChannel.connect(uri);
 
@@ -174,7 +179,7 @@ class _HomePageState extends State<HomePage> {
       await _pc!.setLocalDescription(offer);
 
       final response = await HttpClient()
-          .postUrl(Uri.parse("http://10.227.175.84:8002/offer"))
+          .postUrl(Uri.parse("http://$_baseUrl:8002/offer"))
           .then((req) {
         req.headers.contentType = ContentType.json;
         req.write(jsonEncode({
@@ -213,10 +218,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     if (_transport == Transport.websocket) {
-      // Valitse oikea osoite testiympäristön mukaan:
-       final uri = Uri.parse("ws://10.0.2.2:$_backendPort/ws/audio/"); // Android-emulaattori
-      // final uri = Uri.parse("ws://localhost:$_backendPort/ws/audio/"); / Web
-      // final uri = Uri.parse("ws://oma_ip_osoite:$_backendPort/ws/audio/"); // oman tietokoneen ip
+      final uri = Uri.parse("ws://$_baseUrl:$_backendPort/ws/audio/");
       _audioChannel = WebSocketChannel.connect(uri);
 
       _audioChannel!.stream.listen((msg) {
