@@ -2,32 +2,18 @@ name: Frontend CI (Flutter)
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, "feature/*"]
   pull_request:
     branches: [main, dev]
 
 jobs:
-  flutter:
+  flutter-build:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v5
-
-      - name: Detect Flutter project
-        id: detect
-        run: |
-          if [ -f pubspec.yaml ]; then
-            echo "has_flutter=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_flutter=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Repo not scaffolded yet
-        if: steps.detect.outputs.has_flutter == 'false'
-        run: echo "No pubspec.yaml yet — skipping Flutter CI."
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Flutter
-        if: steps.detect.outputs.has_flutter == 'true'
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.24.0"
@@ -35,17 +21,13 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        if: steps.detect.outputs.has_flutter == 'true'
         run: flutter pub get
 
       - name: Check formatting
-        if: steps.detect.outputs.has_flutter == 'true'
         run: dart format --output=none --set-exit-if-changed .
 
-      - name: Analyze
-        if: steps.detect.outputs.has_flutter == 'true'
+      - name: Analyze code
         run: flutter analyze
 
       - name: Run tests
-        if: steps.detect.outputs.has_flutter == 'true'
         run: flutter test

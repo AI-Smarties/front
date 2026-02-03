@@ -4,6 +4,7 @@
 
 ## Vaatimukset
 - Flutter **3.24.0** (stable) - Matches CI
+- **Backend:** Toimiva FastAPI-backend (portti 8001 suositeltu)
 - **Laitteisto** Even Realities G1 Smart Glasses
 
 ## Asennus ja ajaminen

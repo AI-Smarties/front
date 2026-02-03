@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:front/main.dart';
 
 void main() {
-  testWidgets('App shows text input and send button',
-      (WidgetTester tester) async {
-    // Build and render the app
+  testWidgets('App shows UI components correctly', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    // Verify that a text input field exists
-    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('Live Speech → Text'), findsOneWidget);
+    expect(find.text('Yhdistä'), findsOneWidget);
+    expect(find.text('Tyhjennä'), findsOneWidget);
+    expect(find.byType(DropdownButton<int>), findsOneWidget);
+    expect(find.byType(DropdownButton<Transport>), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
 
-    // Verify that the Send button exists
-    expect(find.text('Lähetä'), findsOneWidget);
-
-    // Verify that the app title is shown
-    expect(find.text('Smarties App'), findsOneWidget);
+    await tester.pumpAndSettle();
   });
 }
