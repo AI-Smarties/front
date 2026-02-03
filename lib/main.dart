@@ -9,18 +9,20 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final G1Manager? manager;
+  const MyApp({this.manager, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: HomePage(),
+    return MaterialApp(
+      home: HomePage(manager: manager),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final G1Manager? manager;
+  const HomePage({this.manager, super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -30,7 +32,13 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _controller = TextEditingController();
   String _responseText = '';
   bool _isLoading = false;
-  final G1Manager _glassManager = G1Manager();
+  late final G1Manager _manager;
+
+  @override
+  void initState() {
+    super.initState();
+    _manager = widget.manager ?? G1Manager();
+  }
 
   @override
   void dispose() {
@@ -44,8 +52,8 @@ class _HomePageState extends State<HomePage> {
   );
 
   Future<void> _sendTextToGlasses(String text) async {
-    if (_glassManager.isConnected) {
-      await _glassManager.display.showText(text);
+    if (_manager.isConnected) {
+      await _manager.display.showText(text);
     }
   }
 
@@ -87,10 +95,10 @@ class _HomePageState extends State<HomePage> {
           });
         }
       } else {
-        setState(() => _responseText = 'Virhe: ${response.statusCode}');
+        setState(() => _responseText = 'Error: ${response.statusCode}');
       }
     } on Exception catch (e) {
-      setState(() => _responseText = 'Yhteysvirhe: $e');
+      setState(() => _responseText = 'Connection error: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -106,7 +114,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             TextField(
               controller: _controller,
-              decoration: const InputDecoration(labelText: 'Kirjoita viesti'),
+              decoration: const InputDecoration(labelText: 'Write message'),
             ),
             const SizedBox(height: 16),
             if (_isLoading)
@@ -114,20 +122,20 @@ class _HomePageState extends State<HomePage> {
             else
               ElevatedButton(
                 onPressed: _sendText,
-                child: const Text('Lähetä'),
+                child: const Text('Send'),
               ),
             const SizedBox(height: 24),
-            Text('Vastaus:', style: Theme.of(context).textTheme.titleMedium),
+            Text('Response:', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             SelectableText(_responseText),
             StreamBuilder<G1ConnectionEvent>(
-              stream: _glassManager.connectionState,
+              stream: _manager.connectionState,
               builder: (context, snapshot) {
                 // 1. Handle loading
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return ElevatedButton(
-                    onPressed: _glassManager.startScan,
-                    child: const Text('Yhdistä laseihin'),
+                    onPressed: _manager.startScan,
+                    child: const Text('Connect to glasses'),
                   );
                 }
 
@@ -138,23 +146,23 @@ class _HomePageState extends State<HomePage> {
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Lasit yhdistetty'),
+                          const Text('Connected to glasses'),
                           ElevatedButton(
-                            onPressed: _glassManager.disconnect,
-                            child: const Text('Katkaise yhteys'),
+                            onPressed: _manager.disconnect,
+                            child: const Text('Disconnect'),
                           ),
                         ],
                       );
                     case G1ConnectionState.disconnected:
                       return ElevatedButton(
-                        onPressed: _glassManager.startScan,
-                        child: const Text('Yhdistä laseihin'),
+                        onPressed: _manager.startScan,
+                        child: const Text('Connect to glasses'),
                       );
                     case G1ConnectionState.scanning:
                       return const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Etsitään laseja'),
+                          Text('Searching for glasses'),
                           CircularProgressIndicator(),
                         ],
                       );
@@ -163,7 +171,7 @@ class _HomePageState extends State<HomePage> {
                       return const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Yhdistetään laseihin'),
+                          Text('Connecting to glasses'),
                           CircularProgressIndicator(),
                         ],
                       );
@@ -171,10 +179,10 @@ class _HomePageState extends State<HomePage> {
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Virhe laseihin yhdistämisessä'),
+                          const Text('Error in connecting to glasses'),
                           ElevatedButton(
-                            onPressed: _glassManager.startScan,
-                            child: const Text('Yhdistä laseihin'),
+                            onPressed: _manager.startScan,
+                            child: const Text('Connect to glasses'),
                           ),
                         ],
                       );
@@ -185,10 +193,10 @@ class _HomePageState extends State<HomePage> {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Laitteita ei löydetty'),
+                    const Text('No glasses found'),
                     ElevatedButton(
-                      onPressed: _glassManager.startScan,
-                      child: const Text('Yhdistä laseihin'),
+                      onPressed: _manager.startScan,
+                      child: const Text('Connect to glasses'),
                     ),
                   ],
                 );
