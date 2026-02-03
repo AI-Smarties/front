@@ -2,14 +2,14 @@
 
 # AI-Smarties - Frontend (Flutter)
 
-## Vaatimukset
+## Requirements
 
 - Flutter **3.24.0** (stable) - Matches CI
-- **Laitteisto** Even Realities G1 Smart Glasses
+- **Hardware** Even Realities G1 Smart Glasses
 
-## Asennus ja ajaminen
+## Installation and setup
 
-## 1. Kloonaa repo ja mene hakemistoon
+## 1. Clone repo and navigate to directory
 
 ```bash
     git clone git@github.com:AI-Smarties/front.git
@@ -19,13 +19,13 @@
     cd front
 ```
 
-## 2. Vaihda kehityshaaraan (dev)
+## 2. Switch to development branch (dev)
 
 ```bash
     git checkout dev
 ```
 
-## 3. Varmista Flutter-ympäristö
+## 3. Confirm the Flutter environment
 
 ```bash
     flutter --version
@@ -35,18 +35,18 @@
     flutter doctor
 ```
 
-> CI käyttää Flutter-versiota 3.24.0 (stable).
+> CI uses Flutter-version 3.24.0 (stable).
 
-## 4. Asenna riippuvuudet
+## 4. Install dependencies
 
 ```bash
     flutter pub get
 ```
 
-## Ympäristömuuttujat
+## Environment variables
 
-Luo `config_dev.json` ja `config_staging.json`:
-Ota mallia config\_\*.example.json tiedostoista
+Create `config_dev.json` and `config_staging.json`:
+Get an example of config\_\*.example.json files
 
 ```json
 {
@@ -54,27 +54,27 @@ Ota mallia config\_\*.example.json tiedostoista
 }
 ```
 
-## 5.1 Käynnistä sovellus Dev ympäristössä
+## 5.1 Start the application in Dev environment
 
 ```bash
     flutter run --dart-define-from-file=config_dev.json
 ```
 
-## 5.2 tai Staging ympäristössä
+## 5.2 or in Staging environment
 
 ```bash
     flutter run --dart-define-from-file=config_staging.json
 ```
 
-## 5.3 Jos käytät VSC
+## 5.3 If you're using VSC
 
-Voit käynnistää ohjelman `Ctrl + Shift + d` ja valitsemalla vasemmasta yläkulmasta ympäristön missä ohjelma käynnistetään
+You can start the program with `Ctrl + Shift + d` and select the environment in the upper left corner where the program will be started.
 
-## Linttaus & formatointi (pakollinen CI:ssä)
+## Linting & formating (necessary in CI)
 
-CI tarkistaa formatoinnin, analyysin ja testit.
+CI checks the formatting, analysis and tests.
 
-Aja paikallisesti:
+Run locally:
 
 ```bash
     dart format --output=none --set-exit-if-changed .
@@ -88,15 +88,16 @@ Aja paikallisesti:
     flutter test
 ```
 
-Linttaus otetaan käyttöön lisäämällä `very_good_analysis` ja `analysis_options.yaml`.
+Linting is enabled by adding
+ `very_good_analysis` ja `analysis_options.yaml`.
 
 ---
 
-## Päivittäinen kehitystyö
+## Daily development workflow
 
-Kun palaat koodaamaan:
+When you return to coding:
 
-1. Hae uusimmat muutokset:
+1. Fetch the latest changes:
 
 ```bash
     git checkout dev
@@ -106,19 +107,19 @@ Kun palaat koodaamaan:
     git pull origin dev
 ```
 
-2. Asenna riippuvuudet:
+2. Install dependencies:
 
 ```bash
     flutter pub get
 ```
 
-3. Aja sovellus (Esimerkiksi kehitysympäristössä):
+3. Run the application (For example in the dev environment):
 
 ```bash
     flutter run --dart-define-from-file=config_dev.json
 ```
 
-4. Varmista CI-läpimeno ennen PR:ää:
+4. Ensure CI-throughput before PR:
 
 ```bash
     dart format --output=none --set-exit-if-changed lib test
@@ -134,19 +135,19 @@ Kun palaat koodaamaan:
 
 ---
 
-## Projektin rakenne (Flutter)
+## Project structure (Flutter)
 
-Kun `flutter create .` on ajettu, rakenne on tyypillisesti:
+When `flutter create .` is run, the structure is typically:
 
-- `lib/` – Sovelluksen UI ja sovelluslogiikka
-- `test/` – Yksikkö- ja widget-testit
-- `android/`, `ios/` – Natiiviprojektit
+- `lib/` – Application UI and application logic
+- `test/` – Unit- and widget testing
+- `android/`, `ios/` – Nativeprojects
 - `.github/workflows/` – CI (format/analyze/test)
-- `analysis_options.yaml` – lint-säännöt
-- `pubspec.yaml` – Flutter/Dart riippuvuudet
+- `analysis_options.yaml` – lint-rules
+- `pubspec.yaml` – Flutter/Dart dependencies
 
 ---
 
-## Tietoa
+## About
 
 Frontend for Everyday AI productivity interface for Even Realities G1 smart glasses.
