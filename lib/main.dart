@@ -213,7 +213,10 @@ class _HomePageState extends State<HomePage> {
     });
 
     if (_transport == Transport.websocket) {
-      final uri = Uri.parse("ws://10.227.175.84:$_backendPort/ws/audio/");
+      // Valitse oikea osoite testiympäristön mukaan:
+       final uri = Uri.parse("ws://10.0.2.2:$_backendPort/ws/audio/"); // Android-emulaattori
+      // final uri = Uri.parse("ws://localhost:$_backendPort/ws/audio/"); / Web
+      // final uri = Uri.parse("ws://oma_ip_osoite:$_backendPort/ws/audio/"); // oman tietokoneen ip
       _audioChannel = WebSocketChannel.connect(uri);
 
       _audioChannel!.stream.listen((msg) {
