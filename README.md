@@ -30,8 +30,6 @@
     flutter doctor
 ```
 
-> CI käyttää Flutter-versiota 3.24.0 (stable).
-
 ## 4. Luo Flutter-projekti
 
 Jos repossa ei vielä ole `pubspec.yaml`-tiedostoa:
