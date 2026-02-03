@@ -131,7 +131,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-
   // VALITSE TÄMÄN MUKAAN MISSÄ FLUTTERIA AJETAAN:
   // Emulaattori: 10.0.2.2 | Puhelin: Tietokoneesi IP | Web: localhost
   final String _baseUrl = "10.0.2.2";
