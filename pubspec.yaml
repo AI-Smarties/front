@@ -30,9 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # flutter_webrtc: ^1.3.0 # Odottaa backend toteutusta
+  flutter_webrtc: ^1.3.0
   web_socket_channel: ^2.4.0
-  flutter_sound: ^9.30.0
+  flutter_sound: 9.28.0
   permission_handler: ^11.4.0
 
 dev_dependencies:
