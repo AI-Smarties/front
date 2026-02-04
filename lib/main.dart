@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
 
+import 'package:http/http.dart' as http;
+import 'package:even_realities_g1/even_realities_g1.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -17,11 +19,14 @@ void main() {
 /* ================= APP ================= */
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final G1Manager? manager;
+  const MyApp({this.manager, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: HomePage());
+    return MaterialApp(
+      home: HomePage(manager: manager),
+    );
   }
 }
 
@@ -45,7 +50,8 @@ enum Transport { websocket, webrtc }
 /* ================= PAGE ================= */
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final G1Manager? manager;
+  const HomePage({this.manager, super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -81,10 +87,18 @@ class _HomePageState extends State<HomePage> {
   final List<Recording> _history = [];
 
   /* ================= INIT ================= */
+  final TextEditingController _controller = TextEditingController();
+  String _responseText = '';
+  bool _isLoading = false;
+  late final G1Manager _manager;
 
-  @override
+@override
   void initState() {
     super.initState();
+    // Kaverin lasit:
+    _manager = widget.manager ?? G1Manager();
+    
+    // Sinun nauhurisi:
     _recorder = FlutterSoundRecorder();
     _audioStreamController = StreamController<Uint8List>();
     _init();
@@ -118,6 +132,64 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+// Uses config_dev.json / config_staging.json for environment variables
+  static final Uri backendUrl = Uri.parse(
+    const String.fromEnvironment('API_URL'),
+  );
+
+  Future<void> _sendTextToGlasses(String text) async {
+    if (_manager.isConnected) {
+      await _manager.display.showText(text);
+    }
+  }
+
+  Future<void> _sendText() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+      _responseText = '';
+    });
+
+    try {
+      final response = await http
+          .post(
+            backendUrl.resolve('/api/message/'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'text': text}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        if (json.containsKey('error')) {
+          final error = json['error'] as String? ?? 'error';
+          unawaited(_sendTextToGlasses(error));
+          setState(() {
+            _responseText = error;
+          });
+        } else if (json.containsKey('reply')) {
+          final reply = json['reply'] as String? ?? 'No reply field';
+          unawaited(_sendTextToGlasses(reply));
+          setState(() {
+            _responseText = reply;
+          });
+        } else {
+          setState(() {
+            _responseText = 'No reply';
+          });
+        }
+      } else {
+        setState(() => _responseText = 'Error: ${response.statusCode}');
+      }
+    } on Exception catch (e) {
+      setState(() => _responseText = 'Connection error: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _disconnect() async {
     await _controlChannel?.sink.close();
     await _audioChannel?.sink.close();
@@ -137,7 +209,7 @@ class _HomePageState extends State<HomePage> {
 
   // VALITSE TÄMÄN MUKAAN MISSÄ FLUTTERIA AJETAAN:
   // Emulaattori: 10.0.2.2 | Puhelin: Tietokoneesi IP | Web: localhost
-  final String _baseUrl = "10.0.2.2";
+  final String _baseUrl = "10.227.175.84";
 
 
   /* ================= WEBSOCKET ================= */
@@ -290,16 +362,17 @@ class _HomePageState extends State<HomePage> {
   }
 
 
-  /* ================= UI ================= */
+ /* ================= UI ================= */
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Live Speech → Text")),
+      appBar: AppBar(title: const Text('Smarties App')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Yläosan asetukset ja napit pysyvät paikallaan
             Row(
               children: [
                 const Text("Backend: "),
@@ -320,10 +393,8 @@ class _HomePageState extends State<HomePage> {
                 DropdownButton<Transport>(
                   value: _transport,
                   items: const [
-                    DropdownMenuItem(
-                        value: Transport.websocket, child: Text("WebSocket")),
-                    DropdownMenuItem(
-                        value: Transport.webrtc, child: Text("WebRTC")),
+                    DropdownMenuItem(value: Transport.websocket, child: Text("WebSocket")),
+                    DropdownMenuItem(value: Transport.webrtc, child: Text("WebRTC")),
                   ],
                   onChanged: _connected
                       ? null
@@ -373,6 +444,8 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             const SizedBox(height: 16),
+            
+            // Reaaliaikainen tekstilaatikko pysyy paikallaan
             Container(
               height: 120,
               width: double.infinity,
@@ -388,33 +461,27 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       TextSpan(
                         text: _committedText,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          color: Colors.black87,
-                        ),
+                        style: const TextStyle(fontSize: 20, color: Colors.black87),
                       ),
                       if (_interimText.isNotEmpty)
                         TextSpan(
-                          text: (_committedText.isNotEmpty ? " " : "") +
-                              _interimText,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            color: Colors.grey,
-                            fontStyle: FontStyle.italic,
-                          ),
+                          text: (_committedText.isNotEmpty ? " " : "") + _interimText,
+                          style: const TextStyle(fontSize: 20, color: Colors.grey, fontStyle: FontStyle.italic),
                         ),
                     ],
                   ),
                 ),
               ),
             ),
+            
             const Divider(),
+
+            // Kaikki rullaava sisältö (Historia + Kaverin uudet ominaisuudet)
             Expanded(
-              child: ListView.builder(
-                itemCount: _history.length,
-                itemBuilder: (context, index) {
-                  final r = _history[index];
-                  return Card(
+              child: ListView(
+                children: [
+                  // 1. SINUN HISTORIALISTASI
+                  ..._history.map((r) => Card(
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
@@ -422,16 +489,71 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           Text(
                             "${r.timestamp.toLocal()} • ${r.latency}",
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                           const SizedBox(height: 6),
                           Text(r.text, style: const TextStyle(fontSize: 18)),
                         ],
                       ),
                     ),
-                  );
-                },
+                  )),
+
+                  const Divider(),
+
+                  // 2. KAVERIN TEKSTIN SYÖTTÖ
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        labelText: 'Write message',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    ElevatedButton(
+                      onPressed: _sendText,
+                      child: const Text('Send to Glasses'),
+                    ),
+                  
+                  const SizedBox(height: 16),
+                  Text('Response:', style: Theme.of(context).textTheme.titleMedium),
+                  SelectableText(_responseText),
+                  
+                  const Divider(),
+
+                  // 3. KAVERIN LASIEN HALLINTA (StreamBuilder)
+                  StreamBuilder<G1ConnectionEvent>(
+                    stream: _manager.connectionState,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return ElevatedButton(onPressed: _manager.startScan, child: const Text('Connect to glasses'));
+                      }
+
+                      if (snapshot.hasData) {
+                        switch (snapshot.data!.state) {
+                          case G1ConnectionState.connected:
+                            return Column(
+                              children: [
+                                const Text('Connected to glasses ✅'),
+                                ElevatedButton(onPressed: _manager.disconnect, child: const Text('Disconnect')),
+                              ],
+                            );
+                          case G1ConnectionState.scanning:
+                          case G1ConnectionState.connecting:
+                            return const Center(child: CircularProgressIndicator());
+                          default:
+                            return ElevatedButton(onPressed: _manager.startScan, child: const Text('Connect to glasses'));
+                        }
+                      }
+                      return ElevatedButton(onPressed: _manager.startScan, child: const Text('Connect to glasses'));
+                    },
+                  ),
+                  const SizedBox(height: 40), // Tyhjää tilaa pohjalle, jotta näppäimistö ei peitä kaikkea
+                ],
               ),
             ),
           ],
