@@ -5,12 +5,9 @@
 ## Requirements
 
 - Flutter **3.24.0** (stable) - Matches CI
-<<<<<<< HEAD
 - **Backend:** Toimiva FastAPI-backend (portti 8001 suositeltu)
 - **Laitteisto** Even Realities G1 Smart Glasses
-=======
 - **Hardware** Even Realities G1 Smart Glasses
->>>>>>> dev
 
 ## Installation and setup
 
@@ -40,22 +37,9 @@
     flutter doctor
 ```
 
-<<<<<<< HEAD
-## 4. Luo Flutter-projekti
-
-Jos repossa ei vielä ole `pubspec.yaml`-tiedostoa:
-
-```bash
-    flutter create .
-```
-
-## 5. Asenna riippuvuudet
-=======
-> CI uses Flutter-version 3.24.0 (stable).
 
 ## 4. Install dependencies
 
->>>>>>> dev
 ```bash
     flutter pub get
 ```

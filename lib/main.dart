@@ -372,7 +372,7 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Yläosan asetukset ja napit pysyvät paikallaan
+
             Row(
               children: [
                 const Text("Backend: "),
@@ -407,7 +407,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 ElevatedButton(
                   onPressed: _toggleConnection,
-                  child: Text(_connected ? "Katkaise" : "Yhdistä"),
+                  child: Text(_connected ? "Disconnect" : "Connect"),
                 ),
                 const SizedBox(width: 8),
                 Container(
@@ -423,12 +423,12 @@ class _HomePageState extends State<HomePage> {
                   onPressed: (!_ready || !_connected)
                       ? null
                       : (_recording ? _stop : _start),
-                  child: Text(_recording ? "Stop" : "Aloita"),
+                  child: Text(_recording ? "Stop" : "Start"),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: _clearHistory,
-                  child: const Text("Tyhjennä"),
+                  child: const Text("Clear"),
                 ),
               ],
             ),
@@ -445,7 +445,6 @@ class _HomePageState extends State<HomePage> {
               ),
             const SizedBox(height: 16),
             
-            // Reaaliaikainen tekstilaatikko pysyy paikallaan
             Container(
               height: 120,
               width: double.infinity,
@@ -476,11 +475,9 @@ class _HomePageState extends State<HomePage> {
             
             const Divider(),
 
-            // Kaikki rullaava sisältö (Historia + Kaverin uudet ominaisuudet)
             Expanded(
               child: ListView(
                 children: [
-                  // 1. SINUN HISTORIALISTASI
                   ..._history.map((r) => Card(
                     child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -500,7 +497,6 @@ class _HomePageState extends State<HomePage> {
 
                   const Divider(),
 
-                  // 2. KAVERIN TEKSTIN SYÖTTÖ
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: TextField(
@@ -525,7 +521,6 @@ class _HomePageState extends State<HomePage> {
                   
                   const Divider(),
 
-                  // 3. KAVERIN LASIEN HALLINTA (StreamBuilder)
                   StreamBuilder<G1ConnectionEvent>(
                     stream: _manager.connectionState,
                     builder: (context, snapshot) {
@@ -538,7 +533,7 @@ class _HomePageState extends State<HomePage> {
                           case G1ConnectionState.connected:
                             return Column(
                               children: [
-                                const Text('Connected to glasses ✅'),
+                                const Text('Connected to glasses'),
                                 ElevatedButton(onPressed: _manager.disconnect, child: const Text('Disconnect')),
                               ],
                             );
@@ -552,7 +547,7 @@ class _HomePageState extends State<HomePage> {
                       return ElevatedButton(onPressed: _manager.startScan, child: const Text('Connect to glasses'));
                     },
                   ),
-                  const SizedBox(height: 40), // Tyhjää tilaa pohjalle, jotta näppäimistö ei peitä kaikkea
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
