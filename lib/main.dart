@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:even_realities_g1/even_realities_g1.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-
 void main() {
   runApp(const MyApp());
 }
@@ -33,16 +33,56 @@ class _HomePageState extends State<HomePage> {
   String _responseText = '';
   bool _isLoading = false;
   late final G1Manager _manager;
+  StreamSubscription<List<int>>? _audioSubscription;
+
+  // Platform channel for native LC3 decoding
+  static const _lc3Channel = MethodChannel('com.smarties.audio/lc3');
+
+  // Decode LC3 audio using native Android decoder
+  Future<Uint8List?> decodeLc3(List<int> lc3Data) async {
+    try {
+      final result = await _lc3Channel.invokeMethod<Uint8List>(
+        'decodeLc3',
+        {'audioData': Uint8List.fromList(lc3Data)},
+      );
+      return result;
+    } on PlatformException catch (e) {
+      print('Failed to decode LC3: ${e.message}');
+      return null;
+    }
+  }
+
 
   @override
   void initState() {
     super.initState();
     _manager = widget.manager ?? G1Manager();
+
+    // Listen to audio data from microphone
+    _audioSubscription = _manager.microphone.audioStream.listen(
+      (audioData) async {
+        // audioData is raw lc3 audio bytes from glasses
+        print('starting to decode');
+
+        // Decode lc3 to pcm using native Android decoder
+        final pcmData = await decodeLc3(audioData);
+        print('decoded');
+
+        if (pcmData != null) {
+          // TODO: Send pcm audio to backend
+          print('Decoded ${audioData.length} LC3 bytes → ${pcmData.length} PCM bytes');
+        }
+      },
+      onError: (error) {
+        print('Audio stream error: $error');
+      },
+    );
   }
 
   @override
   void dispose() {
     _controller.dispose();
+
     super.dispose();
   }
 
@@ -146,10 +186,25 @@ class _HomePageState extends State<HomePage> {
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          Text('Connection ${_manager.isConnected}'),
                           const Text('Connected to glasses'),
                           ElevatedButton(
                             onPressed: _manager.disconnect,
                             child: const Text('Disconnect'),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (_manager.microphone.isActive) {
+                                await _manager.microphone.disable();
+                              } else {
+                                await _manager.microphone.enable();
+                              }
+                              setState(() {});
+                            },
+                            child: Text(_manager.microphone.isActive
+                                ? 'Stop recording'
+                                : 'Start recording'),
                           ),
                         ],
                       );
