@@ -41,6 +41,7 @@ class Recording {
 
 enum Transport { websocket, webrtc }
 
+
 /* ================= PAGE ================= */
 
 class HomePage extends StatefulWidget {
@@ -51,9 +52,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+
+
   /* ---------- audio ---------- */
   late FlutterSoundRecorder _recorder;
   late StreamController<Uint8List> _audioStreamController;
+
 
   /* ---------- connections ---------- */
   WebSocketChannel? _controlChannel;
@@ -135,6 +139,7 @@ class _HomePageState extends State<HomePage> {
   // Emulaattori: 10.0.2.2 | Puhelin: Tietokoneesi IP | Web: localhost
   final String _baseUrl = "10.0.2.2";
 
+
   /* ================= WEBSOCKET ================= */
 
   Future<void> _connectWebSocket() async {
@@ -165,6 +170,7 @@ class _HomePageState extends State<HomePage> {
       onDone: () => _disconnect(),
     );
   }
+
 
   /* ================= WEBRTC (signaling only) ================= */
 
@@ -282,6 +288,7 @@ class _HomePageState extends State<HomePage> {
   void _clearHistory() {
     setState(() => _history.clear());
   }
+
 
   /* ================= UI ================= */
 
