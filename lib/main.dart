@@ -46,7 +46,6 @@ class Recording {
 
 enum Transport { websocket, webrtc }
 
-
 /* ================= PAGE ================= */
 
 class HomePage extends StatefulWidget {
@@ -58,12 +57,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-
   /* ---------- audio ---------- */
   late FlutterSoundRecorder _recorder;
   late StreamController<Uint8List> _audioStreamController;
-
 
   /* ---------- connections ---------- */
   WebSocketChannel? _controlChannel;
@@ -92,12 +88,12 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = false;
   late final G1Manager _manager;
 
-@override
+  @override
   void initState() {
     super.initState();
     // Kaverin lasit:
     _manager = widget.manager ?? G1Manager();
-    
+
     // Sinun nauhurisi:
     _recorder = FlutterSoundRecorder();
     _audioStreamController = StreamController<Uint8List>();
@@ -211,7 +207,6 @@ class _HomePageState extends State<HomePage> {
   // Emulaattori: 10.0.2.2 | Puhelin: Tietokoneesi IP | Web: localhost
   final String _baseUrl = "10.227.175.84";
 
-
   /* ================= WEBSOCKET ================= */
 
   Future<void> _connectWebSocket() async {
@@ -242,7 +237,6 @@ class _HomePageState extends State<HomePage> {
       onDone: () => _disconnect(),
     );
   }
-
 
   /* ================= WEBRTC (signaling only) ================= */
 
@@ -361,8 +355,7 @@ class _HomePageState extends State<HomePage> {
     setState(() => _history.clear());
   }
 
-
- /* ================= UI ================= */
+  /* ================= UI ================= */
 
   @override
   Widget build(BuildContext context) {
@@ -372,7 +365,6 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-
             Row(
               children: [
                 const Text("Backend: "),
@@ -393,8 +385,10 @@ class _HomePageState extends State<HomePage> {
                 DropdownButton<Transport>(
                   value: _transport,
                   items: const [
-                    DropdownMenuItem(value: Transport.websocket, child: Text("WebSocket")),
-                    DropdownMenuItem(value: Transport.webrtc, child: Text("WebRTC")),
+                    DropdownMenuItem(
+                        value: Transport.websocket, child: Text("WebSocket")),
+                    DropdownMenuItem(
+                        value: Transport.webrtc, child: Text("WebRTC")),
                   ],
                   onChanged: _connected
                       ? null
@@ -444,7 +438,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             const SizedBox(height: 16),
-            
             Container(
               height: 120,
               width: double.infinity,
@@ -460,43 +453,46 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       TextSpan(
                         text: _committedText,
-                        style: const TextStyle(fontSize: 20, color: Colors.black87),
+                        style: const TextStyle(
+                            fontSize: 20, color: Colors.black87),
                       ),
                       if (_interimText.isNotEmpty)
                         TextSpan(
-                          text: (_committedText.isNotEmpty ? " " : "") + _interimText,
-                          style: const TextStyle(fontSize: 20, color: Colors.grey, fontStyle: FontStyle.italic),
+                          text: (_committedText.isNotEmpty ? " " : "") +
+                              _interimText,
+                          style: const TextStyle(
+                              fontSize: 20,
+                              color: Colors.grey,
+                              fontStyle: FontStyle.italic),
                         ),
                     ],
                   ),
                 ),
               ),
             ),
-            
             const Divider(),
-
             Expanded(
               child: ListView(
                 children: [
                   ..._history.map((r) => Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "${r.timestamp.toLocal()} • ${r.latency}",
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "${r.timestamp.toLocal()} • ${r.latency}",
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(r.text,
+                                  style: const TextStyle(fontSize: 18)),
+                            ],
                           ),
-                          const SizedBox(height: 6),
-                          Text(r.text, style: const TextStyle(fontSize: 18)),
-                        ],
-                      ),
-                    ),
-                  )),
-
+                        ),
+                      )),
                   const Divider(),
-
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: TextField(
@@ -514,18 +510,18 @@ class _HomePageState extends State<HomePage> {
                       onPressed: _sendText,
                       child: const Text('Send to Glasses'),
                     ),
-                  
                   const SizedBox(height: 16),
-                  Text('Response:', style: Theme.of(context).textTheme.titleMedium),
+                  Text('Response:',
+                      style: Theme.of(context).textTheme.titleMedium),
                   SelectableText(_responseText),
-                  
                   const Divider(),
-
                   StreamBuilder<G1ConnectionEvent>(
                     stream: _manager.connectionState,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return ElevatedButton(onPressed: _manager.startScan, child: const Text('Connect to glasses'));
+                        return ElevatedButton(
+                            onPressed: _manager.startScan,
+                            child: const Text('Connect to glasses'));
                       }
 
                       if (snapshot.hasData) {
@@ -534,17 +530,24 @@ class _HomePageState extends State<HomePage> {
                             return Column(
                               children: [
                                 const Text('Connected to glasses'),
-                                ElevatedButton(onPressed: _manager.disconnect, child: const Text('Disconnect')),
+                                ElevatedButton(
+                                    onPressed: _manager.disconnect,
+                                    child: const Text('Disconnect')),
                               ],
                             );
                           case G1ConnectionState.scanning:
                           case G1ConnectionState.connecting:
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(
+                                child: CircularProgressIndicator());
                           default:
-                            return ElevatedButton(onPressed: _manager.startScan, child: const Text('Connect to glasses'));
+                            return ElevatedButton(
+                                onPressed: _manager.startScan,
+                                child: const Text('Connect to glasses'));
                         }
                       }
-                      return ElevatedButton(onPressed: _manager.startScan, child: const Text('Connect to glasses'));
+                      return ElevatedButton(
+                          onPressed: _manager.startScan,
+                          child: const Text('Connect to glasses'));
                     },
                   ),
                   const SizedBox(height: 40),
