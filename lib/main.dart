@@ -206,7 +206,7 @@ class _HomePageState extends State<HomePage> {
       (msg) {
         final data = jsonDecode(msg as String);
 
-        if (data["type"] == "ready" && _connectStartTs != null) {
+        if (data["type"] == "control" && data["cmd"] == "ready") {
           final now = DateTime.now().millisecondsSinceEpoch.toDouble();
           final ms = (now - _connectStartTs!).round();
 
@@ -260,7 +260,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _stop() async {
     await _recorder.stopRecorder();
 
-    _audioChannel?.sink.add(jsonEncode({"action": "stop"}));
+    _audioChannel?.sink.add(jsonEncode({"type": "control", "cmd": "stop"}));
 
     final fullText =
         [_committedText, _interimText].where((s) => s.isNotEmpty).join(" ");
