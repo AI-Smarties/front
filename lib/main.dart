@@ -60,6 +60,7 @@ class _HomePageState extends State<HomePage> {
 
   /* ---------- connections ---------- */
   WebSocketChannel? _audioChannel;
+  StreamSubscription? _audioChannelSub;
 
   bool _connected = false;
   bool _recording = false;
@@ -172,6 +173,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _disconnect() async {
+    await _audioChannelSub?.cancel();
+    _audioChannelSub = null;
     await _audioChannel?.sink.close();
 
     _audioChannel = null;
@@ -191,6 +194,44 @@ class _HomePageState extends State<HomePage> {
 
   /* ================= WEBSOCKET ================= */
 
+  void _handleWsMessage(dynamic msg) {
+    final data = jsonDecode(msg) as Map<String, dynamic>;
+
+    if (data["type"] == "control" && data["cmd"] == "ready") {
+      final now = DateTime.now().millisecondsSinceEpoch.toDouble();
+      final start = _connectStartTs ?? now;
+      final ms = (now - start).round();
+
+      if (!mounted) return;
+      setState(() {
+        _connected = true;
+        _connectLatency = "$ms ms";
+      });
+
+      _connectStartTs = null;
+      return;
+    }
+
+    if (data["type"] == "transcript") {
+      final payload = data["data"];
+      final status = payload["status"];
+      final text = (payload["text"] ?? "").toString().trim();
+
+      if (status == "partial") {
+        if (!mounted) return;
+        setState(() => _interimText = text);
+      }
+
+      if (status == "final") {
+        if (!mounted) return;
+        setState(() {
+          _committedText = text;
+          _interimText = "";
+        });
+      }
+    }
+  }
+
   Future<void> _connectWebSocket() async {
     _connectStartTs = DateTime.now().millisecondsSinceEpoch.toDouble();
     _connectLatency = "";
@@ -199,22 +240,9 @@ class _HomePageState extends State<HomePage> {
 
     _audioChannel = WebSocketChannel.connect(uri);
 
-    _audioChannel!.stream.listen(
-      (msg) {
-        final data = jsonDecode(msg as String);
-
-        if (data["type"] == "control" && data["cmd"] == "ready") {
-          final now = DateTime.now().millisecondsSinceEpoch.toDouble();
-          final ms = (now - _connectStartTs!).round();
-
-          setState(() {
-            _connected = true;
-            _connectLatency = "$ms ms";
-          });
-
-          _connectStartTs = null;
-        }
-      },
+    await _audioChannelSub?.cancel();
+    _audioChannelSub = _audioChannel!.stream.listen(
+      _handleWsMessage,
       onError: (_) => _disconnect(),
       onDone: () => _disconnect(),
     );
@@ -227,23 +255,6 @@ class _HomePageState extends State<HomePage> {
       _recording = true;
       _committedText = "";
       _interimText = "";
-    });
-
-    _audioChannel!.stream.listen((msg) {
-      final data = jsonDecode(msg as String);
-      final type = data["type"];
-      final text = (data["text"] ?? "").toString().trim();
-
-      if (type == "partial") {
-        setState(() => _interimText = text);
-      }
-
-      if (type == "final") {
-        setState(() {
-          _committedText = text;
-          _interimText = "";
-        });
-      }
     });
 
     await _recorder.startRecorder(
