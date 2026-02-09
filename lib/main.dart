@@ -263,6 +263,7 @@ class _HomePageState extends State<HomePage> {
       numChannels: 1,
       toStream: _audioStreamController.sink,
     );
+    _audioChannel?.sink.add(jsonEncode({"type": "control", "cmd": "start"}));
   }
 
   Future<void> _stop() async {
