@@ -236,7 +236,7 @@ class _HomePageState extends State<HomePage> {
     _connectStartTs = DateTime.now().millisecondsSinceEpoch.toDouble();
     _connectLatency = "";
 
-    final uri = Uri.parse("ws://$_baseUrl:$_backendPort/ws/audio/");
+    final uri = Uri.parse("ws://$_baseUrl:$_backendPort/ws/");
 
     _audioChannel = WebSocketChannel.connect(uri);
 
