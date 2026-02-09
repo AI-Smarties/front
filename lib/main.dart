@@ -62,7 +62,6 @@ class _HomePageState extends State<HomePage> {
   late StreamController<Uint8List> _audioStreamController;
 
   /* ---------- connections ---------- */
-  WebSocketChannel? _controlChannel;
   WebSocketChannel? _audioChannel;
 
   bool _connected = false;
@@ -176,10 +175,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _disconnect() async {
-    await _controlChannel?.sink.close();
     await _audioChannel?.sink.close();
 
-    _controlChannel = null;
     _audioChannel = null;
 
     if (!mounted) return; // Tarkistetaan, että sovellus on vielä käynnissä
@@ -203,9 +200,9 @@ class _HomePageState extends State<HomePage> {
 
     final uri = Uri.parse("ws://$_baseUrl:$_backendPort/ws/audio/");
 
-    _controlChannel = WebSocketChannel.connect(uri);
+    _audioChannel = WebSocketChannel.connect(uri);
 
-    _controlChannel!.stream.listen(
+    _audioChannel!.stream.listen(
       (msg) {
         final data = jsonDecode(msg as String);
 
@@ -234,9 +231,6 @@ class _HomePageState extends State<HomePage> {
       _committedText = "";
       _interimText = "";
     });
-
-    final uri = Uri.parse("ws://$_baseUrl:$_backendPort/ws/audio/");
-    _audioChannel = WebSocketChannel.connect(uri);
 
     _audioChannel!.stream.listen((msg) {
       final data = jsonDecode(msg as String);
@@ -267,9 +261,6 @@ class _HomePageState extends State<HomePage> {
     await _recorder.stopRecorder();
 
     _audioChannel?.sink.add(jsonEncode({"action": "stop"}));
-    await Future.delayed(const Duration(milliseconds: 300));
-    await _audioChannel?.sink.close();
-    _audioChannel = null;
 
     final fullText =
         [_committedText, _interimText].where((s) => s.isNotEmpty).join(" ");
