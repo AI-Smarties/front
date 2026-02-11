@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 
 import '../bluetooth/g1_connection_state.dart';
@@ -35,9 +34,6 @@ class G1Transcription {
   bool _cleanedUp = false;
 
   Timer? _keepAliveTimer;
-  Timer? _pageTimer;
-  final List<List<String>> _pageQueue = [];
-  List<String> _lastSentPage = [''];
 
   G1Transcription(this._manager);
 
@@ -52,8 +48,8 @@ class G1Transcription {
 
   /// Start transcription mode.
   ///
-  /// [batterySaver] - If true (default), uses mode 0x01 (no timer on glasses).
-  /// If false, uses mode 0x02 (shows timer/counter on glasses).
+  /// [batterySaver] - If true (default), uses mode 0x02 (no timer on glasses).
+  /// If false, uses mode 0x01 (shows timer/counter on glasses).
   ///
   /// Audio data will be available via [G1Microphone.audioPacketStream].
   Future<void> start({bool batterySaver = true}) async {
@@ -105,7 +101,7 @@ class G1Transcription {
   Future<void> pause() async {
     if (!isActive.value || _isPaused) {
       debugPrint(
-          '[G1Transcription] Cannot pause (active=$isActive.value, paused=$_isPaused)');
+          '[G1Transcription] Cannot pause (active=${isActive.value}, paused=$_isPaused)');
       return;
     }
 
@@ -129,7 +125,7 @@ class G1Transcription {
   Future<void> resume() async {
     if (!isActive.value || !_isPaused) {
       debugPrint(
-          '[G1Transcription] Cannot resume (active=$isActive.value, paused=$_isPaused)');
+          '[G1Transcription] Cannot resume (active=${isActive.value}, paused=$_isPaused)');
       return;
     }
 
@@ -172,9 +168,6 @@ class G1Transcription {
     isActive.value = false;
     _keepAliveTimer?.cancel();
     _keepAliveTimer = null;
-    _pageTimer?.cancel();
-    _pageTimer = null;
-    _pageQueue.clear();
 
     // Close mic if not already paused
     if (!_isPaused) {
@@ -205,113 +198,24 @@ class G1Transcription {
   /// Max text bytes per BLE packet (248 max - 13 header bytes).
   static const int _maxTextBytes = 235;
 
-  /// Max text lines per page (line 1 is spacer).
-  static const int _linesPerPage = 4;
-
-  /// Queue text to display on the glasses.
-  ///
-  /// Splits long text into pages. Each page shows for 10 seconds,
-  /// then advances. After the last page, clears the display.
-  /// Keep-alive heartbeat only runs when nothing is queued.
+  /// Send text to the glasses display. Truncates to BLE packet limit.
   Future<void> displayText(String text, {bool isInterim = false}) async {
     if (!isActive.value || _isPaused) return;
 
-    // Cancel any running page timer
-    _pageTimer?.cancel();
-    _pageTimer = null;
-
-    if (text.isEmpty) {
-      _pageQueue.clear();
-      await _sendPage([''], isInterim: isInterim);
-      return;
+    // Truncate to fit in one BLE packet
+    String chunk = text;
+    while (utf8.encode(chunk).length > _maxTextBytes) {
+      chunk = chunk.substring(0, chunk.length - 1);
     }
 
-    // Split into BLE-safe lines, then group into pages
-    final lines = _splitText(text);
-    _pageQueue.clear();
-    for (int i = 0; i < lines.length; i += _linesPerPage) {
-      final end = (i + _linesPerPage).clamp(0, lines.length);
-      _pageQueue.add(lines.sublist(i, end));
-    }
-
-    // Show first page immediately
-    await _showNextPage(isInterim: isInterim);
+    await _sendDisplay(chunk, isInterim: isInterim);
+    _startKeepAlive();
   }
 
-  /// Show the next page from the queue, schedule advancement.
-  Future<void> _showNextPage({bool isInterim = false}) async {
-    if (_pageQueue.isEmpty) {
-      // All pages shown — clear display after 10s
-      _pageTimer = Timer(const Duration(seconds: 10), () {
-        _sendPage([''], isInterim: false);
-      });
-      return;
-    }
-
-    final page = _pageQueue.removeAt(0);
-    await _sendPage(page, isInterim: isInterim);
-
-    // Schedule next page in 10 seconds
-    _pageTimer = Timer(const Duration(seconds: 10), () {
-      _showNextPage(isInterim: isInterim);
-    });
-  }
-
-  /// Send a single page (list of text lines) to the glasses.
-  Future<void> _sendPage(List<String> lines, {bool isInterim = false}) async {
-    _lastSentPage = lines;
-    final totalLines = lines.length + 1; // +1 for spacer
-
-    // Line 1: empty spacer
-    await _sendDisplayLine(
-        line: 1, text: '', totalLines: totalLines, isInterim: isInterim);
-
-    for (int i = 0; i < lines.length; i++) {
-      await _sendDisplayLine(
-          line: i + 2,
-          text: lines[i],
-          totalLines: totalLines,
-          isInterim: isInterim);
-    }
-  }
-
-  /// Split text into lines that fit within BLE packet size limit.
-  List<String> _splitText(String text) {
-    if (text.isEmpty) return [''];
-    final textBytes = utf8.encode(text);
-    if (textBytes.length <= _maxTextBytes) return [text];
-
-    final chunks = <String>[];
-    int start = 0;
-    while (start < text.length) {
-      int end = text.length;
-      while (utf8.encode(text.substring(start, end)).length > _maxTextBytes) {
-        end--;
-      }
-      // Try to break at a space
-      if (end < text.length) {
-        final spaceIdx = text.lastIndexOf(' ', end);
-        if (spaceIdx > start) end = spaceIdx;
-      }
-      chunks.add(text.substring(start, end).trim());
-      start = end;
-      while (start < text.length && text[start] == ' ') {
-        start++;
-      }
-    }
-    return chunks;
-  }
-
-  /// Build and send a single display line packet.
-  Future<void> _sendDisplayLine({
-    required int line,
-    required String text,
-    required int totalLines,
-    required bool isInterim,
-  }) async {
+  /// Send a single text chunk to the glasses display.
+  Future<void> _sendDisplay(String text, {bool isInterim = false}) async {
     final seq = _nextSeq();
     final textBytes = utf8.encode(text);
-
     final body = textBytes.isEmpty ? [0x0a, 0x0a] : [...textBytes, 0x0a];
 
     final packet = <int>[
@@ -320,27 +224,26 @@ class G1Transcription {
       0x00,
       seq,
       0x02, // sub-command: text display
-      totalLines,
+      0x01, // totalLines
       0x00,
-      line,
+      0x01, // line
       0x00,
       isInterim ? 0x01 : 0x00,
       0x00,
       0x00,
       ...body,
     ];
-
     packet[1] = packet.length;
 
     await _manager.sendCommand(packet, needsAck: false);
   }
 
-  /// Keep-alive heartbeat — resends the last page to keep the session alive.
+  /// Keep-alive: resends empty display to keep transcription session alive.
   void _startKeepAlive() {
     _keepAliveTimer?.cancel();
-    _keepAliveTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _keepAliveTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
       if (isActive.value && !_isPaused) {
-        _sendPage(_lastSentPage, isInterim: false);
+        await _sendDisplay('', isInterim: false);
       }
     });
   }
