@@ -69,6 +69,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _startTranscription() async {
+    await _ws.startAudioStream();
     await _manager.transcription.start();
   }
 

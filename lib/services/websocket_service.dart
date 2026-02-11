@@ -7,7 +7,7 @@ class WebsocketService {
   final String baseUrl;
   final int port;
 
-  WebsocketService({this.baseUrl = '127.0.0.1', this.port = 8001});
+  WebsocketService({this.baseUrl = '127.0.0.1', this.port = 8000});
 
   WebSocketChannel? _audioChannel;
 
@@ -21,7 +21,7 @@ class WebsocketService {
     if (connected.value) return;
 
     try {
-      final uri = Uri.parse('ws://$baseUrl:$port/ws/audio/');
+      final uri = Uri.parse('ws://$baseUrl:$port/ws/');
       _audioChannel = WebSocketChannel.connect(uri);
       await _audioChannel!.ready;
 
@@ -30,17 +30,25 @@ class WebsocketService {
           final data = jsonDecode(msg as String);
           final type = data['type'];
 
-          if (type == 'ready') {
-            connected.value = true;
-          } else if (type == 'asr_started') {
-            asrOpen.value = true;
-          } else if (type == 'asr_stopped') {
-            asrOpen.value = false;
-          } else if (type == 'partial') {
-            interimText.value = (data['text'] ?? '').toString().trim();
-          } else if (type == 'final') {
-            committedText.value = (data['text'] ?? '').toString().trim();
-            interimText.value = '';
+          if (type == 'control') {
+            if (data['cmd'] == 'ready') {
+              connected.value = true;
+            } else if (data['cmd'] == 'asr_started') {
+              asrOpen.value = true;
+            } else if (data['cmd'] == 'asr_stopped') {
+              asrOpen.value = false;
+            }
+          } else if (type == 'transcript') {
+            final status = data['data']['status'];
+            if (status == 'partial') {
+              interimText.value =
+                  (data['data']['text'] ?? '').toString().trim();
+            } else if (status == 'final') {
+              committedText.value =
+                  (data['data']['text'] ?? '').toString().trim();
+            }
+          } else if (type == 'error') {
+            //todo
           }
         },
         onError: (_) => disconnect(),
@@ -54,7 +62,7 @@ class WebsocketService {
 
   Future<void> disconnect() async {
     try {
-      await _audioChannel?.ready;
+      _audioChannel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'stop'}));
       await _audioChannel?.sink.close();
       _audioChannel = null;
 
@@ -68,12 +76,21 @@ class WebsocketService {
 
   /// Send raw PCM bytes to the backend
   void sendAudio(Uint8List pcmData) {
-    print('sedning data');
-    _audioChannel?.sink.add(pcmData);
+    if(connected.value){
+      _audioChannel?.sink.add(pcmData);
+    }
   }
 
   Future<void> stopAudioStream() async {
-    _audioChannel?.sink.add(jsonEncode({'action': 'stop'}));
+    if(connected.value){
+      _audioChannel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'stop'}));
+    }
+  }
+
+  Future<void> startAudioStream() async {
+    if(connected.value){
+      _audioChannel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'start'}));
+    }
   }
 
   String getFullText() {
