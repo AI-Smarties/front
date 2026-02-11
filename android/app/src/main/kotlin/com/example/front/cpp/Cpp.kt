@@ -6,8 +6,9 @@ object Cpp {
     }
 
     // LC3 decoding
+    fun init() {}
     @JvmStatic
-    external fun decodeLC3(lc3Data: ByteArray): ByteArray
+    external fun decodeLC3(lc3Data: ByteArray?): ByteArray?
 
     // RNNoise (noise reduction)
     @JvmStatic
