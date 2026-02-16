@@ -16,6 +16,10 @@ class WebsocketService {
   final interimText = ValueNotifier<String>('');
   final asrOpen = ValueNotifier<bool>(false);
 
+
+  void clearCommittedText() {
+    committedText.value = '';
+  }
   // connects to ws and adds listener for server messages
   Future<void> connect() async {
     if (connected.value) return;
@@ -94,9 +98,7 @@ class WebsocketService {
   }
 
   String getFullText() {
-    return [committedText.value, interimText.value]
-        .where((s) => s.isNotEmpty)
-        .join(' ');
+    return committedText.value;
   }
 
   void dispose() {

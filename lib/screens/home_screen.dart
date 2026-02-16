@@ -159,6 +159,7 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
+            ElevatedButton(onPressed: () => _ws.clearCommittedText(), child: const Text('Clear text')),
             const SizedBox(height: 16),
             GlassesConnection(
               manager: _manager,
