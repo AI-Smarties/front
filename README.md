@@ -50,7 +50,7 @@ Get an example of config\_\*.example.json files
 
 ```json
 {
-  "API_URL": "http://127.0.0.1:8000"
+  "API_URL": "127.0.0.1:8000"
 }
 ```
 
@@ -89,7 +89,7 @@ Run locally:
 ```
 
 Linting is enabled by adding
- `very_good_analysis` ja `analysis_options.yaml`.
+`very_good_analysis` and `analysis_options.yaml`.
 
 ---
 

@@ -21,9 +21,11 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 ///     Raw PCM bytes (binary frame)
 class WebsocketService {
   final String baseUrl;
-  final int port;
 
-  WebsocketService({this.baseUrl = '127.0.0.1', this.port = 8000});
+  WebsocketService({
+    this.baseUrl =
+        const String.fromEnvironment('API_URL', defaultValue: '127.0.0.1:8000'),
+  });
 
   WebSocketChannel? _audioChannel;
 
@@ -42,9 +44,8 @@ class WebsocketService {
 
   Future<void> connect() async {
     if (connected.value) return;
-
     try {
-      final uri = Uri.parse('ws://$baseUrl:$port/ws/');
+      final uri = Uri.parse('ws://$baseUrl/ws/');
       _audioChannel = WebSocketChannel.connect(uri);
       await _audioChannel!.ready;
 
