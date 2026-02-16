@@ -3,6 +3,22 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+/// Handles all communication with the backend over a WebSocket.
+///
+/// Responsibilities:
+/// - Connect/disconnect to `ws://<baseUrl>:<port>/ws/`
+/// - Send raw PCM audio bytes for speech-to-text
+/// - Send control commands (start/stop audio stream)
+/// - Receive and expose transcription results (committed + interim text)
+///
+/// Message protocol (JSON):
+///   Incoming:
+///     { "type": "control",    "cmd": "ready" | "asr_started" | "asr_stopped" }
+///     { "type": "transcript", "data": { "status": "partial"|"final", "text": "..." } }
+///     { "type": "error",      ... }
+///   Outgoing:
+///     { "type": "control", "cmd": "start" | "stop" }
+///     Raw PCM bytes (binary frame)
 class WebsocketService {
   final String baseUrl;
   final int port;
@@ -12,15 +28,18 @@ class WebsocketService {
   WebSocketChannel? _audioChannel;
 
   final connected = ValueNotifier<bool>(false);
+
   final committedText = ValueNotifier<String>('');
   final interimText = ValueNotifier<String>('');
-  final asrOpen = ValueNotifier<bool>(false);
 
+  /// Whether the backend's ASR (speech recognition) engine is active.
+  /// Can be used for UI indicator
+  final asrActive = ValueNotifier<bool>(false);
 
   void clearCommittedText() {
     committedText.value = '';
   }
-  // connects to ws and adds listener for server messages
+
   Future<void> connect() async {
     if (connected.value) return;
 
@@ -35,14 +54,16 @@ class WebsocketService {
           final type = data['type'];
 
           if (type == 'control') {
+            // Server signals readiness or ASR state changes
             if (data['cmd'] == 'ready') {
               connected.value = true;
             } else if (data['cmd'] == 'asr_started') {
-              asrOpen.value = true;
+              asrActive.value = true;
             } else if (data['cmd'] == 'asr_stopped') {
-              asrOpen.value = false;
+              asrActive.value = false;
             }
           } else if (type == 'transcript') {
+            // Speech-to-text results: partial (interim) or final (committed)
             final status = data['data']['status'];
             if (status == 'partial') {
               interimText.value =
@@ -78,21 +99,23 @@ class WebsocketService {
     }
   }
 
-  /// Send raw PCM bytes to the backend
+  /// Send raw PCM audio bytes to the backend for transcription.
   void sendAudio(Uint8List pcmData) {
-    if(connected.value){
+    if (connected.value) {
       _audioChannel?.sink.add(pcmData);
     }
   }
 
+  /// Tell the backend to stop expecting audio data.
   Future<void> stopAudioStream() async {
-    if(connected.value){
+    if (connected.value) {
       _audioChannel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'stop'}));
     }
   }
 
+  /// Tell the backend to start expecting audio data.
   Future<void> startAudioStream() async {
-    if(connected.value){
+    if (connected.value) {
       _audioChannel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'start'}));
     }
   }
@@ -106,6 +129,6 @@ class WebsocketService {
     connected.dispose();
     committedText.dispose();
     interimText.dispose();
-    asrOpen.dispose();
+    asrActive.dispose();
   }
 }

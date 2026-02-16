@@ -14,13 +14,13 @@ import '../protocol/commands.dart';
 ///
 /// Display modes (byte 5 of 0x52 mode command):
 /// - 0x00 = stop
-/// - 0x01 = start (battery saver, no time on glasses)
-/// - 0x02 = start (full, shows time on glasses)
+/// - 0x01 = start (full, shows time on glasses)
+/// - 0x02 = start (battery saver, no time on glasses)
 /// - 0x03 = pause
 /// - 0x04 = resume
 class G1Transcription {
   final G1Manager _manager;
-
+  
   int _seq = 0;
 
   /// Whether transcription mode is currently active (started and not stopped).
@@ -226,7 +226,7 @@ class G1Transcription {
       0x02, // sub-command: text display
       0x01, // totalLines
       0x00,
-      0x01, // line
+      0x01, // line number
       0x00,
       isInterim ? 0x01 : 0x00,
       0x00,
