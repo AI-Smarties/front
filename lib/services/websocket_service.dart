@@ -81,7 +81,6 @@ class WebsocketService {
         onDone: () => disconnect(),
       );
     } catch (e) {
-      print('WebSocket connect error: $e');
       await disconnect();
     }
   }
@@ -90,13 +89,13 @@ class WebsocketService {
     try {
       _audioChannel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'stop'}));
       await _audioChannel?.sink.close();
+    } catch (_) {
+      // Connection already closed or network gone
+    } finally {
       _audioChannel = null;
-
       connected.value = false;
       committedText.value = '';
       interimText.value = '';
-    } catch (e) {
-      print(e);
     }
   }
 

@@ -17,8 +17,7 @@ class Lc3Decoder {
         {'audioData': Uint8List.fromList(lc3Data)},
       );
       return result;
-    } on PlatformException catch (e) {
-      print('Failed to decode LC3: ${e.message}');
+    } on PlatformException {
       return null;
     }
   }

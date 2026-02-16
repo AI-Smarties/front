@@ -37,14 +37,13 @@ class AudioPipeline {
         if (!_audioCollector.isRecording) {
           _audioCollector.isRecording = true;
           _audioCollector.reset();
-          print('initialize the timer');
           _startSendTimer();
         }
         // Add to buffer
         _audioCollector.addChunk(data.seq, data.data);
       },
       onError: (error) {
-        print('Audio stream error: $error');
+        //todo
       },
     );
   }
