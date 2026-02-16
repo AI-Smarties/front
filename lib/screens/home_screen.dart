@@ -55,7 +55,7 @@ class _HomePageState extends State<HomePage> {
     // Add listener for mic audio packets from glasses
     _audioPipeline.addListenerToMicrophone();
 
-    // React to Speech to text updates from the backend 
+    // React to Speech to text updates from the backend
     // Used to update the UI (fired when committedText/interimText is changed)
     _ws.committedText.addListener(_onWsChange);
     _ws.interimText.addListener(_onWsChange);

@@ -20,7 +20,7 @@ import '../protocol/commands.dart';
 /// - 0x04 = resume
 class G1Transcription {
   final G1Manager _manager;
-  
+
   int _seq = 0;
 
   /// Whether transcription mode is currently active (started and not stopped).
