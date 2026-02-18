@@ -6,6 +6,7 @@ import 'services/websocket_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/landing_screen.dart';
 
+
 void main() {
   runApp(const MyApp());
 }
@@ -19,18 +20,19 @@ class MyApp extends StatelessWidget {
   const MyApp(
       {this.manager, this.ws, this.decoder, this.audioPipeline, super.key});
 
+/*
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
       home: LandingScreen(),
     );
   }
-
-/*
+}
+*/
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: HomePage(
+      home: LandingScreen(
         manager: manager,
         ws: ws,
         decoder: decoder,
@@ -39,5 +41,5 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-*/
-}
+
+

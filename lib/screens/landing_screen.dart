@@ -1,7 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:even_realities_g1/even_realities_g1.dart';
+import 'package:front/services/lc3_decoder.dart';
+import 'package:front/services/audio_pipeline.dart';
+import '../services/websocket_service.dart';
+import 'login_screen.dart';
+import 'register_screen.dart';
 
 class LandingScreen extends StatelessWidget {
-  const LandingScreen({super.key});
+  final G1Manager? manager;
+  final WebsocketService? ws;
+  final Lc3Decoder? decoder;
+  final AudioPipeline? audioPipeline;
+
+  const LandingScreen({
+    super.key,
+    this.manager,
+    this.ws,
+    this.decoder,
+    this.audioPipeline,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +58,7 @@ class LandingScreen extends StatelessWidget {
                                 height: 120,
                                 fit: BoxFit.contain,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 6),
                             const Text(
                                 'Even realities G1 smart glasses',
                                 style: TextStyle(
@@ -110,8 +127,6 @@ class LandingScreen extends StatelessWidget {
                         ],
                     ),
                 ),
-            // top bar
-            // content
             Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
@@ -119,16 +134,48 @@ class LandingScreen extends StatelessWidget {
                     children: [
                         TextButton(
                             onPressed: () {
-                                //TODO navigate to login
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => LoginScreen(
+                                      manager: manager,
+                                      ws: ws,
+                                      decoder: decoder,
+                                      audioPipeline: audioPipeline,
+                                    ),
+                                  ),
+                                );
                             },
-                            child: const Text('Sign in'),
+                            child: const Text(
+                              'Sign in',
+                              style: TextStyle(
+                                color: Color(0xFF00239D),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                         ),
                         const Text('|'),
                         TextButton(
                             onPressed: (){
-                                //TODO navigate to register
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => RegisterScreen(
+                                      manager: manager,
+                                      ws: ws,
+                                      decoder: decoder,
+                                      audioPipeline: audioPipeline,
+                                    ),
+                                  ),
+                                );
                             },
-                            child: const Text('Register'),
+                            child: const Text(
+                              'Register',
+                              style: TextStyle(
+                                color: Color(0xFF00239D),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                         ),
                     ],
                 )
