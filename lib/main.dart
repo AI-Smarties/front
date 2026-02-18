@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:front/services/lc3_decoder.dart';
 import 'package:front/services/audio_pipeline.dart';
 import 'services/websocket_service.dart';
-import 'screens/home_screen.dart';
 import 'screens/landing_screen.dart';
 
 void main() {
