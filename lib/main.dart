@@ -6,7 +6,6 @@ import 'services/websocket_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/landing_screen.dart';
 
-
 void main() {
   runApp(const MyApp());
 }
@@ -41,5 +40,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-

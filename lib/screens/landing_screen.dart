@@ -28,167 +28,163 @@ class LandingScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           child: Column(
             children: [
-                Row(
-                    children: [
-                        IconButton(
-                            onPressed: () {},
-                            icon: const Icon (Icons.menu),
-                        ),
-                        const Spacer(),
-                        Image.asset(
-                            'assets/images/Elisa_logo_blue_RGB.png',
-                            height: 28,
-                            fit: BoxFit.contain,
-                        ),
-                        const Spacer(),
-                        IconButton(
-                            onPressed: () {},
-                            icon: const Icon(Icons.wb_sunny_outlined)
-                        ),
-                    ],
-                ),
-                const SizedBox(height: 24),
-
-                Expanded(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                            Image.asset(
-                                'assets/images/g1-smart-glasses.webp',
-                                height: 120,
-                                fit: BoxFit.contain,
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                                'Even realities G1 smart glasses',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                ),
-                            ),
-                            const SizedBox(height: 34),
-                            Row(
-                                children: [
-                                    Expanded(
-                                        child: LandingTile(
-                                            icon: Icons.bluetooth, 
-                                            label: 'Connect to glasses', 
-                                            onTap: () {},
-                                        ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                        child: LandingTile(
-                                            icon: Icons.fiber_manual_record,
-                                            label: 'Start recording',
-                                            onTap: () {},
-                                        ),
-                                    ),
-                                ],
-                            ),
-                            const SizedBox(height: 14),
-                            Row(
-                                children: [
-                                    Expanded(
-                                        child: LandingTile(
-                                            icon: Icons.list_alt,
-                                            label: 'Key points', 
-                                            onTap: () {},
-                                        ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                        child: LandingTile(
-                                            icon: Icons.play_circle_outline, 
-                                            label: 'Recordings', 
-                                            onTap: () {},
-                                        ),
-                                    ),
-                                ],
-                            ),
-                            const SizedBox(height: 22),
-                            Center(
-                                child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                    decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.black12),
-                                        borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                            Icon(Icons.battery_full, size: 18),
-                                            SizedBox(width: 8),
-                                            Text('G1 smart glasses'),
-                                        ],
-                                    ),
-                                ),
-                            ),
-                        ],
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.menu),
+                  ),
+                  const Spacer(),
+                  Image.asset(
+                    'assets/images/Elisa_logo_blue_RGB.png',
+                    height: 28,
+                    fit: BoxFit.contain,
+                  ),
+                  const Spacer(),
+                  IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.wb_sunny_outlined)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/g1-smart-glasses.webp',
+                      height: 120,
+                      fit: BoxFit.contain,
                     ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Even realities G1 smart glasses',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 34),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: LandingTile(
+                            icon: Icons.bluetooth,
+                            label: 'Connect to glasses',
+                            onTap: () {},
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: LandingTile(
+                            icon: Icons.fiber_manual_record,
+                            label: 'Start recording',
+                            onTap: () {},
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: LandingTile(
+                            icon: Icons.list_alt,
+                            label: 'Key points',
+                            onTap: () {},
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: LandingTile(
+                            icon: Icons.play_circle_outline,
+                            label: 'Recordings',
+                            onTap: () {},
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.battery_full, size: 18),
+                            SizedBox(width: 8),
+                            Text('G1 smart glasses'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-            Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
+              ),
+              Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                        TextButton(
-                            onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => LoginScreen(
-                                      manager: manager,
-                                      ws: ws,
-                                      decoder: decoder,
-                                      audioPipeline: audioPipeline,
-                                    ),
-                                  ),
-                                );
-                            },
-                            child: const Text(
-                              'Sign in',
-                              style: TextStyle(
-                                color: Color(0xFF00239D),
-                                fontWeight: FontWeight.bold,
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LoginScreen(
+                                manager: manager,
+                                ws: ws,
+                                decoder: decoder,
+                                audioPipeline: audioPipeline,
                               ),
                             ),
+                          );
+                        },
+                        child: const Text(
+                          'Sign in',
+                          style: TextStyle(
+                            color: Color(0xFF00239D),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        const Text('|'),
-                        TextButton(
-                            onPressed: (){
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => RegisterScreen(
-                                      manager: manager,
-                                      ws: ws,
-                                      decoder: decoder,
-                                      audioPipeline: audioPipeline,
-                                    ),
-                                  ),
-                                );
-                            },
-                            child: const Text(
-                              'Register',
-                              style: TextStyle(
-                                color: Color(0xFF00239D),
-                                fontWeight: FontWeight.bold,
+                      ),
+                      const Text('|'),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RegisterScreen(
+                                manager: manager,
+                                ws: ws,
+                                decoder: decoder,
+                                audioPipeline: audioPipeline,
                               ),
                             ),
+                          );
+                        },
+                        child: const Text(
+                          'Register',
+                          style: TextStyle(
+                            color: Color(0xFF00239D),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                      ),
                     ],
-                )
-            ),
+                  )),
             ],
-          ), 
+          ),
         ),
       ),
     );
   }
 }
-
-
 
 class LandingTile extends StatelessWidget {
   final IconData icon;
@@ -210,20 +206,19 @@ class LandingTile extends StatelessWidget {
         height: 64,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-            border: Border.all(color: Colors.black12),
-            borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.black12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
-            children: [
-                Icon(icon, size: 22),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: Text(
-                        label,
-                        style: const TextStyle(fontSize: 14),
-                    ) 
-                ),
-            ],
+          children: [
+            Icon(icon, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+                child: Text(
+              label,
+              style: const TextStyle(fontSize: 14),
+            )),
+          ],
         ),
       ),
     );

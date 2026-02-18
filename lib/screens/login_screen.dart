@@ -5,9 +5,6 @@ import 'package:front/services/audio_pipeline.dart';
 import '/services/websocket_service.dart';
 import 'home_screen.dart';
 
-
-
-
 class LoginScreen extends StatelessWidget {
   final G1Manager? manager;
   final WebsocketService? ws;
