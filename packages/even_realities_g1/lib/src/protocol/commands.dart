@@ -320,6 +320,28 @@ class G1SystemControlSubCommands {
 ///
 /// Note: This is different from G1Language in g1_translate.dart which uses
 /// string codes for translation features.
+/// Transcription mode commands (discovered from official Even app BLE traffic).
+///
+/// These commands enable programmatic microphone activation without requiring
+/// a physical TouchBar long-press.
+class G1TranscriptionCommands {
+  G1TranscriptionCommands._();
+
+  /// Setup/init command sent to both sides before activating transcription.
+  static const int setup = 0x39;
+
+  /// Mode activation sent to RIGHT glass only. Powers on the mic hardware.
+  static const int modeActivate = 0x50;
+
+  /// Transcribe display control sent to both sides.
+  /// Start: `[0x52, len, 0x00, seq, 0x01, 0x01]`
+  /// Stop:  `[0x52, len, 0x00, seq, 0x01, 0x00]`
+  static const int transcribeDisplay = 0x52;
+
+  /// Cleanup command sent to both sides when stopping transcription.
+  static const int cleanup = 0x53;
+}
+
 class G1SystemLanguage {
   G1SystemLanguage._();
 

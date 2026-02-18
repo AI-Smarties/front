@@ -55,6 +55,7 @@ export 'src/features/g1_time_weather.dart';
 export 'src/features/g1_settings.dart';
 export 'src/features/g1_bitmap.dart';
 export 'src/features/g1_translate.dart';
+export 'src/features/g1_transcription.dart';
 
 // Voice
 export 'src/voice/g1_microphone.dart';

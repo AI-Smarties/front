@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'ble_mock/g1_manager_mock.dart';
 
-import 'package:front/main.dart';
+import 'package:front/screens/home_screen.dart';
 
 void main() {
   late MockG1Manager mockManager;
@@ -18,15 +18,17 @@ void main() {
   testWidgets('App shows text input and send button',
       (WidgetTester tester) async {
     // Build and render the app
-    await tester.pumpWidget(MyApp(
-      manager: mockManager,
+    await tester.pumpWidget(MaterialApp(
+      home: HomePage(
+        manager: mockManager,
+      ),
     ));
 
     // Verify that a text input field exists
     expect(find.byType(TextField), findsOneWidget);
 
     // Verify that the Send button exists
-    expect(find.text('Send'), findsOneWidget);
+    expect(find.byIcon(Icons.send), findsOneWidget);
 
     // Verify that the app title is shown
     expect(find.text('Smarties App'), findsOneWidget);
@@ -34,8 +36,10 @@ void main() {
 
   testWidgets('Connecting to glasses text is shown when bluetooth is scanning ',
       (tester) async {
-    await tester.pumpWidget(MyApp(
-      manager: mockManager,
+    await tester.pumpWidget(MaterialApp(
+      home: HomePage(
+        manager: mockManager,
+      ),
     ));
 
     mockManager.emitState(
@@ -46,8 +50,10 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
   testWidgets('Disconnect from glasses button is shown', (tester) async {
-    await tester.pumpWidget(MyApp(
-      manager: mockManager,
+    await tester.pumpWidget(MaterialApp(
+      home: HomePage(
+        manager: mockManager,
+      ),
     ));
 
     mockManager.emitState(
@@ -60,8 +66,10 @@ void main() {
   });
   testWidgets('On connecting error right error message is shown',
       (tester) async {
-    await tester.pumpWidget(MyApp(
-      manager: mockManager,
+    await tester.pumpWidget(MaterialApp(
+      home: HomePage(
+        manager: mockManager,
+      ),
     ));
 
     mockManager
@@ -75,8 +83,10 @@ void main() {
   });
   testWidgets('On scanning Scanning for glasses message is shown',
       (tester) async {
-    await tester.pumpWidget(MyApp(
-      manager: mockManager,
+    await tester.pumpWidget(MaterialApp(
+      home: HomePage(
+        manager: mockManager,
+      ),
     ));
 
     mockManager
@@ -85,20 +95,24 @@ void main() {
     expect(find.text('Searching for glasses'), findsOneWidget);
   });
   testWidgets('When connected show right text', (tester) async {
-    await tester.pumpWidget(MyApp(
-      manager: mockManager,
+    await tester.pumpWidget(MaterialApp(
+      home: HomePage(
+        manager: mockManager,
+      ),
     ));
 
     mockManager
         .emitState(const G1ConnectionEvent(state: G1ConnectionState.connected));
     await tester.pump();
     final disconnectButton = find.widgetWithText(ElevatedButton, 'Disconnect');
-    expect(find.text('Connected to glasses'), findsOneWidget);
     expect(disconnectButton, findsOneWidget);
+    expect(find.text('Record'), findsOneWidget);
   });
   testWidgets('Shows scanning state when connecting', (tester) async {
-    await tester.pumpWidget(MyApp(
-      manager: mockManager,
+    await tester.pumpWidget(MaterialApp(
+      home: HomePage(
+        manager: mockManager,
+      ),
     ));
     final connectButton =
         find.widgetWithText(ElevatedButton, 'Connect to glasses');
@@ -116,7 +130,7 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
     // Connected state
-    expect(find.text('Connected to glasses'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Disconnect'), findsOneWidget);
   });
 
   test('Can send text to glasses when connected', () async {

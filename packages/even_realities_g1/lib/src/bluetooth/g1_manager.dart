@@ -16,6 +16,7 @@ import '../features/g1_time_weather.dart';
 import '../features/g1_settings.dart';
 import '../features/g1_bitmap.dart';
 import '../features/g1_translate.dart';
+import '../features/g1_transcription.dart';
 import '../voice/g1_microphone.dart';
 import '../voice/g1_voice_note.dart';
 
@@ -78,6 +79,7 @@ class G1Manager {
   late final G1Settings settings;
   late final G1Bitmap bitmap;
   late final G1Translate translate;
+  late final G1Transcription transcription;
   late final G1Microphone microphone;
   late final G1VoiceNote voiceNote;
 
@@ -125,6 +127,7 @@ class G1Manager {
     settings = G1Settings(this);
     bitmap = G1Bitmap(this);
     translate = G1Translate(this);
+    transcription = G1Transcription(this);
     microphone = G1Microphone(this);
     voiceNote = G1VoiceNote(this);
   }

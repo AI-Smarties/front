@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:even_realities_g1/even_realities_g1.dart';
 
 /// Mock G1Manager for testing
@@ -8,6 +9,8 @@ class MockG1Manager implements G1Manager {
       StreamController.broadcast();
   bool _isConnected = false;
   final MockG1Display _mockDisplay = MockG1Display();
+  final MockG1Microphone _mockMicrophone = MockG1Microphone();
+  final MockG1Transcription _mockTranscription = MockG1Transcription();
 
   @override
   Stream<G1ConnectionEvent> get connectionState => _controller.stream;
@@ -17,6 +20,12 @@ class MockG1Manager implements G1Manager {
 
   @override
   G1Display get display => _mockDisplay;
+
+  @override
+  G1Microphone get microphone => _mockMicrophone;
+
+  @override
+  G1Transcription get transcription => _mockTranscription;
 
   @override
   Future<void> startScan({
@@ -79,6 +88,7 @@ class MockG1Manager implements G1Manager {
 
   @override
   void dispose() {
+    _mockMicrophone.dispose();
     _controller.close();
   }
 
@@ -106,6 +116,53 @@ class MockG1Display implements G1Display {
   void clearDisplay() {
     displayedTexts.clear();
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class MockG1Microphone implements G1Microphone {
+  final _audioPacketStreamController =
+      StreamController<G1AudioPacket>.broadcast();
+
+  @override
+  Stream<G1AudioPacket> get audioPacketStream =>
+      _audioPacketStreamController.stream;
+
+  @override
+  void dispose() {
+    _audioPacketStreamController.close();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class MockG1Transcription implements G1Transcription {
+  @override
+  final isActive = ValueNotifier<bool>(false);
+
+  @override
+  Future<void> start({bool batterySaver = true}) async {
+    isActive.value = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    isActive.value = false;
+  }
+
+  @override
+  Future<void> displayText(String text, {bool isInterim = false}) async {}
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  Future<void> resume() async {}
+
+  @override
+  bool get isPaused => false;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
