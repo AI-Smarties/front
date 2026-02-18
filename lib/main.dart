@@ -4,6 +4,7 @@ import 'package:front/services/lc3_decoder.dart';
 import 'package:front/services/audio_pipeline.dart';
 import 'services/websocket_service.dart';
 import 'screens/home_screen.dart';
+import 'screens/landing_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,6 +21,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: LandingScreen(),
+    );
+  }
+
+/*
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       home: HomePage(
         manager: manager,
@@ -29,4 +38,6 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+*/
 }
