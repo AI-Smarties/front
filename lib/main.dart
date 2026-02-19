@@ -18,15 +18,6 @@ class MyApp extends StatelessWidget {
   const MyApp(
       {this.manager, this.ws, this.decoder, this.audioPipeline, super.key});
 
-/*
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: LandingScreen(),
-    );
-  }
-}
-*/
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
