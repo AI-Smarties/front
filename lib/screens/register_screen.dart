@@ -1,27 +1,13 @@
-import 'package:even_realities_g1/even_realities_g1.dart';
 import 'package:flutter/material.dart';
-import 'package:front/services/lc3_decoder.dart';
-import 'package:front/services/audio_pipeline.dart';
-import '/services/websocket_service.dart';
-import 'home_screen.dart';
+
 
 class RegisterScreen extends StatelessWidget {
-  final G1Manager? manager;
-  final WebsocketService? ws;
-  final Lc3Decoder? decoder;
-  final AudioPipeline? audioPipeline;
-
-  const RegisterScreen({
-    super.key,
-    this.manager,
-    this.ws,
-    this.decoder,
-    this.audioPipeline,
-  });
+  const RegisterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(title: const Text('Register')),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -54,17 +40,7 @@ class RegisterScreen extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => HomePage(
-                      manager: manager,
-                      ws: ws,
-                      decoder: decoder,
-                      audioPipeline: audioPipeline,
-                    ),
-                  ),
-                );
+                //For now just shows register screen, other futures will be applied later
               },
               child: const Text(
                 'Create account',
