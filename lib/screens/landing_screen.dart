@@ -118,32 +118,32 @@ class _LandingScreenState extends State<LandingScreen> {
                   ),
                   const Spacer(),
                   Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ListenableBuilder(
-                      listenable: _ws.connected,
-                      builder: (context, _) => _ws.connected.value
-                        ? const Row(
-                          children: [
-                          Icon(Icons.signal_cellular_alt,
-                              color: Colors.green, size: 20),
-                          SizedBox(width: 6),
-                          Text('Connected',
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.green)),
-                        ],
-                      )
-                    : OutlinedButton.icon(
-                        onPressed: () => _ws.connect(),
-                        icon: const Icon(Icons.refresh, size: 18),
-                        label: const Text('Reconnect to server'),
-                      ),
-              )),
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ListenableBuilder(
+                        listenable: _ws.connected,
+                        builder: (context, _) => _ws.connected.value
+                            ? const Row(
+                                children: [
+                                  Icon(Icons.signal_cellular_alt,
+                                      color: Colors.green, size: 20),
+                                  SizedBox(width: 6),
+                                  Text('Connected',
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.green)),
+                                ],
+                              )
+                            : OutlinedButton.icon(
+                                onPressed: () => _ws.connect(),
+                                icon: const Icon(Icons.refresh, size: 18),
+                                label: const Text('Reconnect to server'),
+                              ),
+                      )),
                   IconButton(
                       onPressed: () {},
-                      icon: const Icon(Icons.wb_sunny_outlined, color: Color(0xFF00239D))),
+                      icon: const Icon(Icons.wb_sunny_outlined,
+                          color: Color(0xFF00239D))),
                 ],
               ),
-              
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -171,9 +171,7 @@ class _LandingScreenState extends State<LandingScreen> {
                           await _stopTranscription();
                         }
                       },
-                        
                     ),
-
                     const SizedBox(height: 14),
                     Row(
                       children: [
