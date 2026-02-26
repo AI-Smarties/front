@@ -15,7 +15,8 @@ void main() {
     mockManager.dispose();
   });
 
-  Future<void> pumpConnection(WidgetTester tester, {Future<void> Function()? onRecordToggle}) async {
+  Future<void> pumpConnection(WidgetTester tester,
+      {Future<void> Function()? onRecordToggle}) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -79,7 +80,10 @@ void main() {
     await tester.pump();
 
     expect(find.text('Error in connecting to glasses'), findsOneWidget);
-    expect(find.text('Retry').evaluate().isNotEmpty || find.text('Connect to glasses').evaluate().isNotEmpty, isTrue);
+    expect(
+        find.text('Retry').evaluate().isNotEmpty ||
+            find.text('Connect to glasses').evaluate().isNotEmpty,
+        isTrue);
   });
 
   testWidgets('When connected shows Disconnect and Record', (tester) async {
@@ -91,7 +95,10 @@ void main() {
     await tester.pump();
 
     expect(find.text('Disconnect'), findsOneWidget);
-    expect(find.text('Record').evaluate().isNotEmpty || find.text('Stop').evaluate().isNotEmpty, isTrue);
+    expect(
+        find.text('Record').evaluate().isNotEmpty ||
+            find.text('Stop').evaluate().isNotEmpty,
+        isTrue);
   });
 
   testWidgets('Tapping Record calls onRecordToggle', (tester) async {

@@ -19,8 +19,6 @@ class GlassesConnection extends StatefulWidget {
 }
 
 class _GlassesConnectionState extends State<GlassesConnection> {
-
-
   Future<void> startScan() async {
     try {
       await widget.manager.startScan();
@@ -43,7 +41,7 @@ class _GlassesConnectionState extends State<GlassesConnection> {
           return LandingTileButton(
             icon: Icons.bluetooth,
             label: 'Connect to glasses',
-            onTap: () async{
+            onTap: () async {
               await startScan();
             },
           );
@@ -62,7 +60,7 @@ class _GlassesConnectionState extends State<GlassesConnection> {
                         child: LandingTileButton(
                           icon: Icons.bluetooth_connected,
                           label: 'Disconnect',
-                          onTap:() async{
+                          onTap: () async {
                             await widget.manager.disconnect();
                           },
                         ),
@@ -70,13 +68,15 @@ class _GlassesConnectionState extends State<GlassesConnection> {
                       const SizedBox(width: 14),
                       Expanded(
                         child: LandingTileButton(
-                          icon: isRecording ? Icons.stop_circle_outlined : Icons.mic,
+                          icon: isRecording
+                              ? Icons.stop_circle_outlined
+                              : Icons.mic,
                           label: isRecording ? 'Stop' : 'Record',
-                          onTap: () async{
+                          onTap: () async {
                             await widget.onRecordToggle?.call();
                           },
                         ),
-                      ),  
+                      ),
                     ],
                   );
                 },
@@ -85,8 +85,8 @@ class _GlassesConnectionState extends State<GlassesConnection> {
             // Disconnected
             case G1ConnectionState.disconnected:
               return LandingTileButton(
-                icon: Icons.bluetooth, 
-                label: 'Connect to glasses', 
+                icon: Icons.bluetooth,
+                label: 'Connect to glasses',
                 onTap: () async {
                   await startScan();
                 },
@@ -119,9 +119,9 @@ class _GlassesConnectionState extends State<GlassesConnection> {
                 children: [
                   const Text('Error in connecting to glasses'),
                   LandingTileButton(
-                    icon: Icons.bluetooth,
-                    label: 'Connect to glasses',
-                    onTap: startScan)
+                      icon: Icons.bluetooth,
+                      label: 'Connect to glasses',
+                      onTap: startScan)
                 ],
               );
           }
@@ -132,7 +132,7 @@ class _GlassesConnectionState extends State<GlassesConnection> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Error in connecting to glasses'),
-            const SizedBox( height: 10),
+            const SizedBox(height: 10),
             LandingTileButton(
               icon: Icons.refresh,
               label: 'Retry',
@@ -144,7 +144,6 @@ class _GlassesConnectionState extends State<GlassesConnection> {
     );
   }
 }
-
 
 class LandingTileButton extends StatelessWidget {
   final IconData icon;
