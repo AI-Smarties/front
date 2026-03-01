@@ -306,11 +306,12 @@ class _LandingScreenState extends State<LandingScreen> {
                                   const EdgeInsets.symmetric(horizontal: 14),
                               decoration: BoxDecoration(
                                 color: _usePhoneMic
-                                    ? Colors.green.withValues(alpha: 0.15)
+                                    ? Colors.lightGreen
+                                        .withAlpha((0.15 * 255).round())
                                     : Colors.transparent,
                                 border: Border.all(
                                   color: _usePhoneMic
-                                      ? Colors.green
+                                      ? Colors.lightGreen
                                       : Colors.black12,
                                 ),
                                 borderRadius: BorderRadius.circular(8),
@@ -322,7 +323,7 @@ class _LandingScreenState extends State<LandingScreen> {
                                       ? const Icon(
                                           Icons.mic,
                                           size: 22,
-                                          color: Colors.green,
+                                          color: Colors.lightGreen,
                                         )
                                       : Image.asset(
                                           'assets/images/g1-smart-glasses.webp',
@@ -342,7 +343,7 @@ class _LandingScreenState extends State<LandingScreen> {
                                             ? FontWeight.bold
                                             : FontWeight.normal,
                                         color: _usePhoneMic
-                                            ? Colors.green
+                                            ? Colors.lightGreen
                                             : Colors.black,
                                       ),
                                     ),
