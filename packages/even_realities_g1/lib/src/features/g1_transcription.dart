@@ -212,7 +212,8 @@ class G1Transcription {
       chunk = chunk.substring(0, chunk.length - 1);
     }
 
-    await _sendDisplay(chunk, lineNumber: 1, totalLines: 1, isInterim: isInterim);
+    await _sendDisplay(chunk,
+        lineNumber: 1, totalLines: 1, isInterim: isInterim);
     _startKeepAlive();
   }
 
@@ -221,11 +222,13 @@ class G1Transcription {
   /// Each line is sent as a separate BLE packet with the correct
   /// [lineNumber] and [totalLines] values so the glasses stack them.
   /// Pass an empty list to blank the display.
-  Future<void> displayLines(List<String> lines, {bool isInterim = false}) async {
+  Future<void> displayLines(List<String> lines,
+      {bool isInterim = false}) async {
     if (!isActive.value || _isPaused) return;
 
     if (lines.isEmpty) {
-      await _sendDisplay('', lineNumber: 1, totalLines: 1, isInterim: isInterim);
+      await _sendDisplay('',
+          lineNumber: 1, totalLines: 1, isInterim: isInterim);
       _startKeepAlive();
       return;
     }
@@ -237,7 +240,8 @@ class G1Transcription {
       while (utf8.encode(chunk).length > _maxTextBytes) {
         chunk = chunk.substring(0, chunk.length - 1);
       }
-      await _sendDisplay(chunk, lineNumber: i + 1, totalLines: total, isInterim: isInterim);
+      await _sendDisplay(chunk,
+          lineNumber: i + 1, totalLines: total, isInterim: isInterim);
     }
     _startKeepAlive();
   }
@@ -283,7 +287,8 @@ class G1Transcription {
       } else {
         final total = _lastLines.length;
         for (int i = 0; i < _lastLines.length; i++) {
-          await _sendDisplay(_lastLines[i], lineNumber: i + 1, totalLines: total, isInterim: false);
+          await _sendDisplay(_lastLines[i],
+              lineNumber: i + 1, totalLines: total, isInterim: false);
         }
       }
     });

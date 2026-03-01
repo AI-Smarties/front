@@ -5,8 +5,7 @@ import 'dart:async';
 
 class PhoneAudioService {
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
-  final StreamController<Uint8List> _controller =
-      StreamController<Uint8List>();
+  final StreamController<Uint8List> _controller = StreamController<Uint8List>();
 
   bool _initialized = false;
 
@@ -40,7 +39,7 @@ class PhoneAudioService {
 
   Future<void> stop() async {
     if (_recorder.isRecording) {
-    await _recorder.stopRecorder();
+      await _recorder.stopRecorder();
     }
   }
 

@@ -436,9 +436,9 @@ class G1Manager {
     glass.connectionState.listen((state) {
       // debugPrint('[${glass.side} Glass] Connection state: $state');
       if (state == BluetoothConnectionState.disconnected) {
-      // debugPrint('[${glass.side} Glass] Attempting reconnect...');
-      // glass.connect(); // Kommentoitu pois sen takia että se tämä ei anna katkaista napista
-      // yhteyttä ja aiheuttaa sen takia ikuisen loopin
+        // debugPrint('[${glass.side} Glass] Attempting reconnect...');
+        // glass.connect(); // Kommentoitu pois sen takia että se tämä ei anna katkaista napista
+        // yhteyttä ja aiheuttaa sen takia ikuisen loopin
       }
     });
   }
