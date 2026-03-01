@@ -35,6 +35,9 @@ class G1Transcription {
 
   Timer? _keepAliveTimer;
 
+  /// The lines currently shown on the display, reused by the keep-alive.
+  List<String> _lastLines = [];
+
   G1Transcription(this._manager);
 
   /// Whether transcription is currently paused.
@@ -168,6 +171,7 @@ class G1Transcription {
     isActive.value = false;
     _keepAliveTimer?.cancel();
     _keepAliveTimer = null;
+    _lastLines = [];
 
     // Close mic if not already paused
     if (!_isPaused) {
@@ -208,25 +212,55 @@ class G1Transcription {
       chunk = chunk.substring(0, chunk.length - 1);
     }
 
-    await _sendDisplay(chunk, isInterim: isInterim);
+    await _sendDisplay(chunk, lineNumber: 1, totalLines: 1, isInterim: isInterim);
+    _startKeepAlive();
+  }
+
+  /// Send multiple lines to the glasses display, one packet per line.
+  ///
+  /// Each line is sent as a separate BLE packet with the correct
+  /// [lineNumber] and [totalLines] values so the glasses stack them.
+  /// Pass an empty list to blank the display.
+  Future<void> displayLines(List<String> lines, {bool isInterim = false}) async {
+    if (!isActive.value || _isPaused) return;
+
+    if (lines.isEmpty) {
+      await _sendDisplay('', lineNumber: 1, totalLines: 1, isInterim: isInterim);
+      _startKeepAlive();
+      return;
+    }
+
+    _lastLines = List.from(lines);
+    final total = lines.length;
+    for (int i = 0; i < lines.length; i++) {
+      String chunk = lines[i];
+      while (utf8.encode(chunk).length > _maxTextBytes) {
+        chunk = chunk.substring(0, chunk.length - 1);
+      }
+      await _sendDisplay(chunk, lineNumber: i + 1, totalLines: total, isInterim: isInterim);
+    }
     _startKeepAlive();
   }
 
   /// Send a single text chunk to the glasses display.
-  Future<void> _sendDisplay(String text, {bool isInterim = false}) async {
+  Future<void> _sendDisplay(
+    String text, {
+    int lineNumber = 1,
+    int totalLines = 1,
+    bool isInterim = false,
+  }) async {
     final seq = _nextSeq();
     final textBytes = utf8.encode(text);
     final body = textBytes.isEmpty ? [0x0a, 0x0a] : [...textBytes, 0x0a];
-
     final packet = <int>[
       G1TranscriptionCommands.transcribeDisplay,
       0x00, // placeholder for total length
       0x00,
       seq,
       0x02, // sub-command: text display
-      0x01, // totalLines
+      totalLines,
       0x00,
-      0x01, // line number
+      lineNumber,
       0x00,
       isInterim ? 0x01 : 0x00,
       0x00,
@@ -238,12 +272,19 @@ class G1Transcription {
     await _manager.sendCommand(packet, needsAck: false);
   }
 
-  /// Keep-alive: resends empty display to keep transcription session alive.
+  /// Keep-alive: resends the current display content every 8 s to keep the
+  /// transcription session alive without clearing the screen.
   void _startKeepAlive() {
     _keepAliveTimer?.cancel();
     _keepAliveTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
-      if (isActive.value && !_isPaused) {
-        await _sendDisplay('', isInterim: false);
+      if (!isActive.value || _isPaused) return;
+      if (_lastLines.isEmpty) {
+        await _sendDisplay('', lineNumber: 1, totalLines: 1, isInterim: false);
+      } else {
+        final total = _lastLines.length;
+        for (int i = 0; i < _lastLines.length; i++) {
+          await _sendDisplay(_lastLines[i], lineNumber: i + 1, totalLines: total, isInterim: false);
+        }
       }
     });
   }
