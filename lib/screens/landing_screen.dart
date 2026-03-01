@@ -135,6 +135,13 @@ class _LandingScreenState extends State<LandingScreen> {
     _manager.transcription.displayLines(
       List.unmodifiable(_displayedSentences),
     );
+
+    Future.delayed(const Duration(seconds: 10), () {
+      _displayedSentences.remove(sentence);
+      _manager.transcription.displayLines(
+        List.unmodifiable(_displayedSentences),
+      );
+    });
   }
 
   void _clearDisplayQueue() {
