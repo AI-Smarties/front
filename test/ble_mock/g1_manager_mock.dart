@@ -130,6 +130,12 @@ class MockG1Microphone implements G1Microphone {
       _audioPacketStreamController.stream;
 
   @override
+  Future<void> enable() async {}
+
+  @override
+  Future<void> disable() async {}
+
+  @override
   void dispose() {
     _audioPacketStreamController.close();
   }

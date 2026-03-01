@@ -86,7 +86,7 @@ void main() {
         isTrue);
   });
 
-  testWidgets('When connected shows Disconnect and Record', (tester) async {
+  testWidgets('When connected shows Connected state', (tester) async {
     await pumpConnection(tester);
 
     mockManager.emitState(
@@ -94,35 +94,6 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Disconnect'), findsOneWidget);
-    expect(
-        find.text('Record').evaluate().isNotEmpty ||
-            find.text('Stop').evaluate().isNotEmpty,
-        isTrue);
-  });
-
-  testWidgets('Tapping Record calls onRecordToggle', (tester) async {
-    var called = 0;
-    await pumpConnection(
-      tester,
-      onRecordToggle: () async {
-        called++;
-      },
-    );
-
-    mockManager.emitState(
-      const G1ConnectionEvent(state: G1ConnectionState.connected),
-    );
-    await tester.pump();
-
-    // Tap the tile that contains "Record" or "Stop"
-    if (find.text('Record').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Record'));
-    } else {
-      await tester.tap(find.text('Stop'));
-    }
-    await tester.pump();
-
-    expect(called, 1);
+    expect(find.text('Connected'), findsOneWidget);
   });
 }

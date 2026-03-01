@@ -65,8 +65,7 @@ class _GlassesConnectionState extends State<GlassesConnection> {
                         builder: (context, isRecording, _) => ElevatedButton(
                           onPressed: () => widget.onRecordToggle?.call(),
                           style: ElevatedButton.styleFrom(
-                            iconColor:
-                                isRecording ? Colors.red : Colors.lightGreen,
+                            iconColor: isRecording ? Colors.red : Colors.green,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
