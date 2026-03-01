@@ -152,7 +152,7 @@ class LandingTileButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: activeColor != null
-              ? activeColor!.withValues(alpha: 0.15)
+              ? activeColor!.withAlpha((0.15 * 255).round())
               : Colors.transparent,
           border: Border.all(
             color: activeColor ?? Colors.black12,

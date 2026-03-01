@@ -379,7 +379,8 @@ class _LandingScreenState extends State<LandingScreen> {
                                       horizontal: 14),
                                   decoration: BoxDecoration(
                                     color: isRecording
-                                        ? Colors.red.withValues(alpha: 0.15)
+                                        ? Colors.red
+                                            .withAlpha((0.15 * 255).round())
                                         : Colors.transparent,
                                     border: Border.all(
                                       color: isRecording

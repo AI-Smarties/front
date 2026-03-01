@@ -1,7 +1,4 @@
 import 'dart:async';
-
-import 'package:flutter/foundation.dart';
-
 import '../bluetooth/g1_connection_state.dart';
 import '../bluetooth/g1_manager.dart';
 import '../protocol/commands.dart';
