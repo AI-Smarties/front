@@ -2,8 +2,7 @@ import 'package:even_realities_g1/even_realities_g1.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'ble_mock/g1_manager_mock.dart';
-
-import 'package:front/screens/home_screen.dart';
+import 'package:front/screens/landing_screen.dart';
 
 void main() {
   late MockG1Manager mockManager;
@@ -15,122 +14,123 @@ void main() {
   tearDown(() {
     mockManager.dispose();
   });
+
+  Future<void> pumpLanding(WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LandingScreen(
+          manager: mockManager,
+        ),
+      ),
+    );
+  }
+
+  Future<void> disposeLanding(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+  }
+
   testWidgets('App shows text input and send button',
       (WidgetTester tester) async {
-    // Build and render the app
-    await tester.pumpWidget(MaterialApp(
-      home: HomePage(
-        manager: mockManager,
-      ),
-    ));
+    await pumpLanding(tester);
 
-    // Verify that a text input field exists
-    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('Even realities G1 smart glasses'), findsOneWidget);
+    expect(find.text('Recordings'), findsOneWidget);
+    expect(find.text('Even realities G1 smart glasses'), findsOneWidget);
 
-    // Verify that the Send button exists
-    expect(find.byIcon(Icons.send), findsOneWidget);
-
-    // Verify that the app title is shown
-    expect(find.text('Smarties App'), findsOneWidget);
+    await disposeLanding(tester);
   });
 
-  testWidgets('Connecting to glasses text is shown when bluetooth is scanning ',
+  testWidgets('Connecting to glasses text is shown when bluetooth is scanning',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: HomePage(
-        manager: mockManager,
-      ),
-    ));
+    await pumpLanding(tester);
 
     mockManager.emitState(
         const G1ConnectionEvent(state: G1ConnectionState.connecting));
 
     await tester.pump();
+
     expect(find.text('Connecting to glasses'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await disposeLanding(tester);
   });
+
   testWidgets('Disconnect from glasses button is shown', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: HomePage(
-        manager: mockManager,
-      ),
-    ));
+    await pumpLanding(tester);
 
     mockManager.emitState(
         const G1ConnectionEvent(state: G1ConnectionState.disconnected));
+
     await tester.pump();
-    final connectionButton =
-        find.widgetWithText(ElevatedButton, 'Connect to glasses');
-    // Initially shows connect button (not connected)
-    expect(connectionButton, findsOneWidget);
+
+    expect(find.text('Connect to glasses'), findsOneWidget);
+
+    await disposeLanding(tester);
   });
+
   testWidgets('On connecting error right error message is shown',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: HomePage(
-        manager: mockManager,
-      ),
-    ));
+    await pumpLanding(tester);
 
     mockManager
         .emitState(const G1ConnectionEvent(state: G1ConnectionState.error));
-    await tester.pump();
-    final connectionButton =
-        find.widgetWithText(ElevatedButton, 'Connect to glasses');
-    expect(find.text('Error in connecting to glasses'), findsOneWidget);
 
-    expect(connectionButton, findsOneWidget);
+    await tester.pump();
+
+    expect(find.text('Error in connecting to glasses'), findsOneWidget);
+    expect(find.text('Connect to glasses'), findsOneWidget);
+
+    await disposeLanding(tester);
   });
+
   testWidgets('On scanning Scanning for glasses message is shown',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: HomePage(
-        manager: mockManager,
-      ),
-    ));
+    await pumpLanding(tester);
+
+    mockManager
+        .emitState(const G1ConnectionEvent(state: G1ConnectionState.scanning));
+
+    await tester.pump();
+
+    expect(find.text('Searching for glasses'), findsOneWidget);
+
+    await disposeLanding(tester);
+  });
+
+  testWidgets('When connected show right text', (tester) async {
+    await pumpLanding(tester);
+
+    mockManager
+        .emitState(const G1ConnectionEvent(state: G1ConnectionState.connected));
+
+    await tester.pump();
+
+    expect(find.text('Connected'), findsOneWidget);
+
+    await disposeLanding(tester);
+  });
+
+  testWidgets('Shows scanning state when connecting', (tester) async {
+    await pumpLanding(tester);
 
     mockManager
         .emitState(const G1ConnectionEvent(state: G1ConnectionState.scanning));
     await tester.pump();
     expect(find.text('Searching for glasses'), findsOneWidget);
-  });
-  testWidgets('When connected show right text', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: HomePage(
-        manager: mockManager,
-      ),
-    ));
+
+    mockManager.emitState(
+        const G1ConnectionEvent(state: G1ConnectionState.connecting));
+    await tester.pump();
+    expect(find.text('Connecting to glasses'), findsOneWidget);
 
     mockManager
         .emitState(const G1ConnectionEvent(state: G1ConnectionState.connected));
     await tester.pump();
-    final disconnectButton = find.widgetWithText(ElevatedButton, 'Disconnect');
-    expect(disconnectButton, findsOneWidget);
-    expect(find.text('Record'), findsOneWidget);
-  });
-  testWidgets('Shows scanning state when connecting', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: HomePage(
-        manager: mockManager,
-      ),
-    ));
-    final connectButton =
-        find.widgetWithText(ElevatedButton, 'Connect to glasses');
-    await tester.tap(connectButton);
+    expect(find.text('Connected'), findsOneWidget);
 
-    await tester.pump();
-
-// Search state
-    expect(find.text('Searching for glasses'), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
-    await tester.pump(const Duration(milliseconds: 500));
-    // Connecting state
-    expect(find.text('Connecting to glasses'), findsOneWidget);
-
-    await tester.pump(const Duration(milliseconds: 500));
-    // Connected state
-    expect(find.widgetWithText(ElevatedButton, 'Disconnect'), findsOneWidget);
+    await disposeLanding(tester);
   });
 
   test('Can send text to glasses when connected', () async {
@@ -141,6 +141,7 @@ void main() {
     final mockDisplay = mockManager.display as MockG1Display;
     expect(mockDisplay.getText, contains('test'));
   });
+
   test('Cannot send text to glasses when not connected', () async {
     mockManager.setConnected(false);
 

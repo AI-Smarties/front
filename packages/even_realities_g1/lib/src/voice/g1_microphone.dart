@@ -1,7 +1,4 @@
 import 'dart:async';
-
-import 'package:flutter/foundation.dart';
-
 import '../bluetooth/g1_connection_state.dart';
 import '../bluetooth/g1_manager.dart';
 import '../protocol/commands.dart';
@@ -193,10 +190,11 @@ class G1Microphone {
     }
   }
 
+  // DEBUG PRINTTI KOMMENTOITU POIS KOSKA LIIKAA SPÄMMIÄ
   void _handleVoiceData(GlassSide side, int seq, List<int> audioData) {
     // Accept audio if either _isActive OR if we're in an AI recording session
     if (!_isActive && !_aiSessionCollector.isRecording) {
-      debugPrint('[G1Microphone] Dropping audio packet - mic not active');
+      // debugPrint('[G1Microphone] Dropping audio packet - mic not active');
       return;
     }
 

@@ -35,6 +35,11 @@ class _GlassesConnectionState extends State<GlassesConnection> {
     // Rebuild whenever the glasses connection state changes
     return StreamBuilder<G1ConnectionEvent>(
       stream: widget.manager.connectionState,
+      initialData: G1ConnectionEvent(
+        state: widget.manager.isConnected
+            ? G1ConnectionState.connected
+            : G1ConnectionState.disconnected,
+      ),
       builder: (context, snapshot) {
         // No event yet — show the initial connect button
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -46,39 +51,17 @@ class _GlassesConnectionState extends State<GlassesConnection> {
             },
           );
         }
-
         if (snapshot.hasData) {
           switch (snapshot.data!.state) {
             // Connected
             case G1ConnectionState.connected:
-              return ValueListenableBuilder<bool>(
-                valueListenable: widget.manager.transcription.isActive,
-                builder: (context, isRecording, _) {
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: LandingTileButton(
-                          icon: Icons.bluetooth_connected,
-                          label: 'Disconnect',
-                          onTap: () async {
-                            await widget.manager.disconnect();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: LandingTileButton(
-                          icon: isRecording
-                              ? Icons.stop_circle_outlined
-                              : Icons.mic,
-                          label: isRecording ? 'Stop' : 'Record',
-                          onTap: () async {
-                            await widget.onRecordToggle?.call();
-                          },
-                        ),
-                      ),
-                    ],
-                  );
+              return LandingTileButton(
+                icon: Icons.bluetooth_connected,
+                label: 'Connected',
+                activeColor: Colors.lightGreen,
+                onTap: () async {
+                  await widget.manager.transcription.stop();
+                  await widget.manager.disconnect();
                 },
               );
 
@@ -148,12 +131,14 @@ class _GlassesConnectionState extends State<GlassesConnection> {
 class LandingTileButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color? activeColor;
   final Future<void> Function()? onTap;
 
   const LandingTileButton({
     super.key,
     required this.icon,
     required this.label,
+    this.activeColor,
     required this.onTap,
   });
 
@@ -163,18 +148,34 @@ class LandingTileButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        height: 64,
+        height: 72,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.black12),
+          color: activeColor != null
+              ? activeColor!.withAlpha((0.15 * 255).round())
+              : Colors.transparent,
+          border: Border.all(
+            color: activeColor ?? Colors.black12,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22),
+            Icon(
+              icon,
+              size: 22,
+              color: activeColor ?? Colors.grey[700],
+            ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(label, style: const TextStyle(fontSize: 14)),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: activeColor ?? Colors.grey[800],
+                ),
+              ),
             ),
           ],
         ),

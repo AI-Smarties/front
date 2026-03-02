@@ -4,7 +4,7 @@ import 'package:even_realities_g1/even_realities_g1.dart';
 import 'package:flutter/material.dart';
 import 'package:front/services/lc3_decoder.dart';
 import 'package:front/services/audio_pipeline.dart';
-import '../widgets/glasses_connection.dart';
+import '../widgets/g1_connection.dart';
 import '../services/websocket_service.dart';
 
 /// Main screen of the app. Manages BLE glasses connection,

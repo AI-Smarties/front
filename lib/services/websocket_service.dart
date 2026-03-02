@@ -54,7 +54,19 @@ class WebsocketService {
           final data = jsonDecode(msg as String);
           final type = data['type'];
 
-          if (type == 'control') {
+          if (type == 'transcript') {
+            debugPrint("WS RECEIVED TRANSCRIPT: ${data['data']}");
+            final status = data['data']['status'];
+            if (status == 'partial') {
+              interimText.value =
+                  (data['data']['text'] ?? '').toString().trim();
+              debugPrint("→ Interim updated: ${interimText.value}");
+            } else if (status == 'final') {
+              committedText.value =
+                  (data['data']['text'] ?? '').toString().trim();
+              debugPrint("→ Final/committed updated: ${committedText.value}");
+            }
+          } else if (type == 'control') {
             // Server signals readiness or ASR state changes
             if (data['cmd'] == 'ready') {
               connected.value = true;
@@ -62,16 +74,6 @@ class WebsocketService {
               asrActive.value = true;
             } else if (data['cmd'] == 'asr_stopped') {
               asrActive.value = false;
-            }
-          } else if (type == 'transcript') {
-            // Speech-to-text results: partial (interim) or final (committed)
-            final status = data['data']['status'];
-            if (status == 'partial') {
-              interimText.value =
-                  (data['data']['text'] ?? '').toString().trim();
-            } else if (status == 'final') {
-              committedText.value =
-                  (data['data']['text'] ?? '').toString().trim();
             }
           } else if (type == 'error') {
             //todo
@@ -86,9 +88,12 @@ class WebsocketService {
   }
 
   Future<void> disconnect() async {
+    final channel = _audioChannel;
+    _audioChannel = null; // Asetetaan heti nulliksi
+    connected.value = false;
     try {
-      _audioChannel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'stop'}));
-      await _audioChannel?.sink.close();
+      channel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'stop'}));
+      await channel?.sink.close().timeout(const Duration(milliseconds: 500));
     } catch (_) {
       // Connection already closed or network gone
     } finally {
