@@ -70,6 +70,7 @@ class _LandingScreenState extends State<LandingScreen> {
     _ws.committedText.addListener(_onCommittedTextChange);
 
     // Korjattu: tyhjennys ja mic disable vain kerran käynnistyksessä
+    /*
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _manager.microphone.disable();
       if (_manager.isConnected) {
@@ -77,6 +78,7 @@ class _LandingScreenState extends State<LandingScreen> {
         debugPrint("Cleared screen on app start");
       }
     });
+    */
   }
 
   @override
