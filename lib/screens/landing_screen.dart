@@ -35,6 +35,7 @@ class _LandingScreenState extends State<LandingScreen> {
   late final PhoneAudioService _phoneAudio;
 
   bool _usePhoneMic = false;
+  final ValueNotifier<bool> _isRecording = ValueNotifier(false);
 
   int _lastCommittedLength = 0;
   final List<String> _displayedSentences = [];
@@ -67,7 +68,8 @@ class _LandingScreenState extends State<LandingScreen> {
     // _audioPipeline.addListenerToMicrophone();
 
     // React to committed (final) text only — interim is too noisy for glasses
-    _ws.committedText.addListener(_onCommittedTextChange);
+    //_ws.committedText.addListener(_onCommittedTextChange); commented out because we want to show the ai response to glasses
+    _ws.aiResponse.addListener(_onAiResponse);
 
     // Korjattu: tyhjennys ja mic disable vain kerran käynnistyksessä
     /*
@@ -83,7 +85,8 @@ class _LandingScreenState extends State<LandingScreen> {
 
   @override
   void dispose() {
-    _ws.committedText.removeListener(_onCommittedTextChange);
+    _ws.aiResponse.removeListener(_onAiResponse);
+    _isRecording.dispose();
     _audioPipeline.dispose();
     _phoneAudio.dispose();
     _ws.dispose();
@@ -122,6 +125,27 @@ class _LandingScreenState extends State<LandingScreen> {
     _addSentenceToDisplay(newSentence);
   }
 
+  void _onAiResponse() {
+    final aiResponse = _ws.aiResponse.value;
+
+    // Empty = session reset (disconnect / new start) → reset pointer
+    if (aiResponse.isEmpty) {
+      _lastCommittedLength = 0;
+      return;
+    }
+    // Extract only the newly committed sentence
+    debugPrint(aiResponse);
+    final newSentence = aiResponse.substring(_lastCommittedLength).trim();
+    _lastCommittedLength = aiResponse.length;
+
+    if (newSentence.isEmpty) return;
+
+    debugPrint("→ Adding to display: '$newSentence'");
+    if (_manager.isConnected && _manager.transcription.isActive.value) {
+      _addSentenceToDisplay(newSentence);
+    }
+  }
+
   /// Adds a sentence to the on-screen queue.
   ///
   /// Each sentence is a separate BLE packet (lineNumber 1..N).
@@ -152,45 +176,66 @@ class _LandingScreenState extends State<LandingScreen> {
 
   /// Begin a transcription session
   Future<void> _startTranscription() async {
-    await _manager.transcription.stop(); // pakota clean stop ensin
-    await Future.delayed(const Duration(milliseconds: 300));
-    _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
-    _lastCommittedLength = 0;
-    _clearDisplayQueue();
+    if (_manager.isConnected) {
+      //glasses implementation
+      await _manager.transcription.stop(); // pakota clean stop ensin
+      await Future.delayed(const Duration(milliseconds: 300));
+      _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
+      _lastCommittedLength = 0;
+      _clearDisplayQueue();
 
-    await _ws.startAudioStream();
-    await _manager.transcription.start();
+      await _ws.startAudioStream();
+      await _manager.transcription.start();
 
-    if (_usePhoneMic) {
-      await _phoneAudio.start((pcm) {
-        if (_ws.connected.value) {
-          _ws.sendAudio(pcm);
-        }
-      });
+      if (_usePhoneMic) {
+        await _phoneAudio.start((pcm) {
+          if (_ws.connected.value) {
+            _ws.sendAudio(pcm);
+          }
+        });
+      } else {
+        await _manager.microphone.enable();
+        _audioPipeline.addListenerToMicrophone();
+      }
+
+      await _manager.transcription.displayText('Recording started.');
+      debugPrint("Transcription (re)started");
     } else {
-      await _manager.microphone.enable();
-      _audioPipeline.addListenerToMicrophone();
+      //wo glasses
+      _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
+      _lastCommittedLength = 0;
+      _clearDisplayQueue();
+      await _ws.startAudioStream();
+      await _phoneAudio.start(
+        (pcm) {
+          if (_ws.connected.value) _ws.sendAudio(pcm);
+        },
+      );
     }
-
-    await _manager.transcription.displayText('Recording started.');
-    debugPrint("Transcription (re)started");
+    _isRecording.value = true;
   }
 
   /// End a transcription session
   Future<void> _stopTranscription() async {
-    _clearDisplayQueue();
-    await _manager.transcription.displayText('Recording stopped.');
-    await Future.delayed(const Duration(seconds: 2));
-    if (_usePhoneMic) {
-      await _phoneAudio.stop();
+    _isRecording.value = false;
+    if (_manager.isConnected) {
+      _clearDisplayQueue();
+      await _manager.transcription.displayText('Recording stopped.');
+      await Future.delayed(const Duration(seconds: 2));
+      if (_usePhoneMic) {
+        await _phoneAudio.stop();
+      } else {
+        await _manager.microphone.disable();
+        await _audioPipeline.stop();
+      }
+      // lisätty jotta paketit kerkiävät lähteä ennen sulkemista
+      await Future.delayed(const Duration(milliseconds: 200));
+      await _ws.stopAudioStream();
+      await _manager.transcription.stop();
     } else {
-      await _manager.microphone.disable();
-      await _audioPipeline.stop();
+      await _phoneAudio.stop();
+      await _ws.stopAudioStream();
     }
-    // lisätty jotta paketit kerkiävät lähteä ennen sulkemista
-    await Future.delayed(const Duration(milliseconds: 200));
-    await _ws.stopAudioStream();
-    await _manager.transcription.stop();
   }
 
   @override
@@ -365,7 +410,7 @@ class _LandingScreenState extends State<LandingScreen> {
                         // Start / Stop recording
                         Expanded(
                           child: ValueListenableBuilder<bool>(
-                            valueListenable: _manager.transcription.isActive,
+                            valueListenable: _isRecording,
                             builder: (context, isRecording, _) {
                               return InkWell(
                                 onTap: () async {
@@ -442,6 +487,27 @@ class _LandingScreenState extends State<LandingScreen> {
 
                     const SizedBox(height: 22),
 
+                    ValueListenableBuilder<String>(
+                      valueListenable: _ws.aiResponse,
+                      builder: (context, aiResponse, _) {
+                        if (aiResponse.isEmpty) return const SizedBox.shrink();
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            aiResponse,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 8),
                     Center(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
