@@ -128,21 +128,11 @@ class _LandingScreenState extends State<LandingScreen> {
   void _onAiResponse() {
     final aiResponse = _ws.aiResponse.value;
 
-    // Empty = session reset (disconnect / new start) → reset pointer
-    if (aiResponse.isEmpty) {
-      _lastCommittedLength = 0;
-      return;
-    }
-    // Extract only the newly committed sentence
     debugPrint(aiResponse);
-    final newSentence = aiResponse.substring(_lastCommittedLength).trim();
-    _lastCommittedLength = aiResponse.length;
 
-    if (newSentence.isEmpty) return;
-
-    debugPrint("→ Adding to display: '$newSentence'");
+    debugPrint("→ Adding to display: '$aiResponse'");
     if (_manager.isConnected && _manager.transcription.isActive.value) {
-      _addSentenceToDisplay(newSentence);
+      _addSentenceToDisplay(aiResponse);
     }
   }
 
