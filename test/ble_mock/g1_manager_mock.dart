@@ -1,0 +1,175 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:even_realities_g1/even_realities_g1.dart';
+
+/// Mock G1Manager for testing
+/// Only implements methods we actually use, other methods handled by noSuchMethod
+class MockG1Manager implements G1Manager {
+  final StreamController<G1ConnectionEvent> _controller =
+      StreamController.broadcast();
+  bool _isConnected = false;
+  final MockG1Display _mockDisplay = MockG1Display();
+  final MockG1Microphone _mockMicrophone = MockG1Microphone();
+  final MockG1Transcription _mockTranscription = MockG1Transcription();
+
+  @override
+  Stream<G1ConnectionEvent> get connectionState => _controller.stream;
+
+  @override
+  bool get isConnected => _isConnected;
+
+  @override
+  G1Display get display => _mockDisplay;
+
+  @override
+  G1Microphone get microphone => _mockMicrophone;
+
+  @override
+  G1Transcription get transcription => _mockTranscription;
+
+  @override
+  Future<void> startScan({
+    void Function()? onConnected,
+    void Function(String, String)? onGlassesFound,
+    void Function(String)? onUpdate,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    // Emit scanning
+    _controller.add(const G1ConnectionEvent(
+      state: G1ConnectionState.scanning,
+    ));
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Emit connecting
+    _controller.add(const G1ConnectionEvent(
+      state: G1ConnectionState.connecting,
+    ));
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Emit connected
+    _isConnected = true;
+    _controller.add(const G1ConnectionEvent(
+      state: G1ConnectionState.connected,
+      leftGlassName: 'Mock-L',
+      rightGlassName: 'Mock-R',
+    ));
+
+    onConnected?.call();
+  }
+
+  @override
+  Future<void> disconnect() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    _isConnected = false;
+    _controller.add(
+      const G1ConnectionEvent(state: G1ConnectionState.disconnected),
+    );
+  }
+
+  // Test helper methods
+  void emitState(G1ConnectionEvent event) => _controller.add(event);
+
+  void setConnected(bool connected) {
+    _isConnected = connected;
+    _controller.add(G1ConnectionEvent(
+      state: connected
+          ? G1ConnectionState.connected
+          : G1ConnectionState.disconnected,
+    ));
+  }
+
+  Future<void> sendTextToGlasses(String text) async {
+    if (_isConnected) {
+      await _mockDisplay.showText(text);
+    }
+  }
+
+  @override
+  void dispose() {
+    _mockMicrophone.dispose();
+    _controller.close();
+  }
+
+  // Handle all other methods we don't care about
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class MockG1Display implements G1Display {
+  final List<String> displayedTexts = [];
+
+  @override
+  Future<void> showText(
+    String text, {
+    Duration duration = const Duration(seconds: 5),
+    bool clearOnComplete = true,
+    int margin = 5,
+  }) async {
+    displayedTexts.add(text);
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+  List<String> get getText => displayedTexts;
+
+  void clearDisplay() {
+    displayedTexts.clear();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class MockG1Microphone implements G1Microphone {
+  final _audioPacketStreamController =
+      StreamController<G1AudioPacket>.broadcast();
+
+  @override
+  Stream<G1AudioPacket> get audioPacketStream =>
+      _audioPacketStreamController.stream;
+
+  @override
+  Future<void> enable() async {}
+
+  @override
+  Future<void> disable() async {}
+
+  @override
+  void dispose() {
+    _audioPacketStreamController.close();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class MockG1Transcription implements G1Transcription {
+  @override
+  final isActive = ValueNotifier<bool>(false);
+
+  @override
+  Future<void> start({bool batterySaver = true}) async {
+    isActive.value = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    isActive.value = false;
+  }
+
+  @override
+  Future<void> displayText(String text, {bool isInterim = false}) async {}
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  Future<void> resume() async {}
+
+  @override
+  bool get isPaused => false;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
