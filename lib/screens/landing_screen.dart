@@ -37,7 +37,6 @@ class _LandingScreenState extends State<LandingScreen> {
   bool _usePhoneMic = false;
   final ValueNotifier<bool> _isRecording = ValueNotifier(false);
 
-  int _lastCommittedLength = 0;
   final List<String> _displayedSentences = [];
   static const int _maxDisplayedSentences = 4;
 
@@ -64,23 +63,8 @@ class _LandingScreenState extends State<LandingScreen> {
     _phoneAudio = PhoneAudioService();
     _phoneAudio.init();
 
-    // Add listener for mic audio packets
-    // _audioPipeline.addListenerToMicrophone();
-
     // React to committed (final) text only — interim is too noisy for glasses
-    //_ws.committedText.addListener(_onCommittedTextChange); commented out because we want to show the ai response to glasses
     _ws.aiResponse.addListener(_onAiResponse);
-
-    // Korjattu: tyhjennys ja mic disable vain kerran käynnistyksessä
-    /*
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _manager.microphone.disable();
-      if (_manager.isConnected) {
-        _manager.clearScreen();
-        debugPrint("Cleared screen on app start");
-      }
-    });
-    */
   }
 
   @override
@@ -92,37 +76,6 @@ class _LandingScreenState extends State<LandingScreen> {
     _ws.dispose();
     _manager.dispose();
     super.dispose();
-  }
-
-  /// Called when the backend commits a final transcript fragment.
-  ///
-  /// The backend accumulates all final text in one growing string
-  /// (e.g. "First sentence. Second sentence."). We track how much
-  /// has already been displayed via [_lastCommittedLength] and extract
-  /// only the new portion. Each fragment from the backend already ends
-  /// with punctuation, so it is a complete sentence ready to display.
-  void _onCommittedTextChange() {
-    final fullText = _ws.committedText.value;
-
-    // Empty = session reset (disconnect / new start) → reset pointer
-    if (fullText.isEmpty) {
-      _lastCommittedLength = 0;
-      return;
-    }
-
-    if (!_manager.isConnected || !_manager.transcription.isActive.value) return;
-
-    // Nothing new to show
-    if (fullText.length <= _lastCommittedLength) return;
-
-    // Extract only the newly committed sentence
-    final newSentence = fullText.substring(_lastCommittedLength).trim();
-    _lastCommittedLength = fullText.length;
-
-    if (newSentence.isEmpty) return;
-
-    debugPrint("→ Adding to display: '$newSentence'");
-    _addSentenceToDisplay(newSentence);
   }
 
   void _onAiResponse() {
@@ -171,7 +124,6 @@ class _LandingScreenState extends State<LandingScreen> {
       await _manager.transcription.stop(); // pakota clean stop ensin
       await Future.delayed(const Duration(milliseconds: 300));
       _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
-      _lastCommittedLength = 0;
       _clearDisplayQueue();
 
       await _ws.startAudioStream();
@@ -193,7 +145,6 @@ class _LandingScreenState extends State<LandingScreen> {
     } else {
       //wo glasses
       _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
-      _lastCommittedLength = 0;
       _clearDisplayQueue();
       await _ws.startAudioStream();
       await _phoneAudio.start(
