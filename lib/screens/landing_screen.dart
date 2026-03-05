@@ -35,8 +35,8 @@ class _LandingScreenState extends State<LandingScreen> {
   late final PhoneAudioService _phoneAudio;
 
   bool _usePhoneMic = false;
+  final ValueNotifier<bool> _isRecording = ValueNotifier(false);
 
-  int _lastCommittedLength = 0;
   final List<String> _displayedSentences = [];
   static const int _maxDisplayedSentences = 4;
 
@@ -63,25 +63,14 @@ class _LandingScreenState extends State<LandingScreen> {
     _phoneAudio = PhoneAudioService();
     _phoneAudio.init();
 
-    // Add listener for mic audio packets
-    // _audioPipeline.addListenerToMicrophone();
-
     // React to committed (final) text only — interim is too noisy for glasses
-    _ws.committedText.addListener(_onCommittedTextChange);
-
-    // Korjattu: tyhjennys ja mic disable vain kerran käynnistyksessä
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _manager.microphone.disable();
-      if (_manager.isConnected) {
-        _manager.clearScreen();
-        debugPrint("Cleared screen on app start");
-      }
-    });
+    _ws.aiResponse.addListener(_onAiResponse);
   }
 
   @override
   void dispose() {
-    _ws.committedText.removeListener(_onCommittedTextChange);
+    _ws.aiResponse.removeListener(_onAiResponse);
+    _isRecording.dispose();
     _audioPipeline.dispose();
     _phoneAudio.dispose();
     _ws.dispose();
@@ -89,35 +78,15 @@ class _LandingScreenState extends State<LandingScreen> {
     super.dispose();
   }
 
-  /// Called when the backend commits a final transcript fragment.
-  ///
-  /// The backend accumulates all final text in one growing string
-  /// (e.g. "First sentence. Second sentence."). We track how much
-  /// has already been displayed via [_lastCommittedLength] and extract
-  /// only the new portion. Each fragment from the backend already ends
-  /// with punctuation, so it is a complete sentence ready to display.
-  void _onCommittedTextChange() {
-    final fullText = _ws.committedText.value;
+  void _onAiResponse() {
+    final aiResponse = _ws.aiResponse.value;
 
-    // Empty = session reset (disconnect / new start) → reset pointer
-    if (fullText.isEmpty) {
-      _lastCommittedLength = 0;
-      return;
+    debugPrint(aiResponse);
+
+    debugPrint("→ Adding to display: '$aiResponse'");
+    if (_manager.isConnected && _manager.transcription.isActive.value) {
+      _addSentenceToDisplay(aiResponse);
     }
-
-    if (!_manager.isConnected || !_manager.transcription.isActive.value) return;
-
-    // Nothing new to show
-    if (fullText.length <= _lastCommittedLength) return;
-
-    // Extract only the newly committed sentence
-    final newSentence = fullText.substring(_lastCommittedLength).trim();
-    _lastCommittedLength = fullText.length;
-
-    if (newSentence.isEmpty) return;
-
-    debugPrint("→ Adding to display: '$newSentence'");
-    _addSentenceToDisplay(newSentence);
   }
 
   /// Adds a sentence to the on-screen queue.
@@ -150,45 +119,64 @@ class _LandingScreenState extends State<LandingScreen> {
 
   /// Begin a transcription session
   Future<void> _startTranscription() async {
-    await _manager.transcription.stop(); // pakota clean stop ensin
-    await Future.delayed(const Duration(milliseconds: 300));
-    _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
-    _lastCommittedLength = 0;
-    _clearDisplayQueue();
+    if (_manager.isConnected) {
+      //glasses implementation
+      await _manager.transcription.stop(); // pakota clean stop ensin
+      await Future.delayed(const Duration(milliseconds: 300));
+      _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
+      _clearDisplayQueue();
 
-    await _ws.startAudioStream();
-    await _manager.transcription.start();
+      await _ws.startAudioStream();
+      await _manager.transcription.start();
 
-    if (_usePhoneMic) {
-      await _phoneAudio.start((pcm) {
-        if (_ws.connected.value) {
-          _ws.sendAudio(pcm);
-        }
-      });
+      if (_usePhoneMic) {
+        await _phoneAudio.start((pcm) {
+          if (_ws.connected.value) {
+            _ws.sendAudio(pcm);
+          }
+        });
+      } else {
+        await _manager.microphone.enable();
+        _audioPipeline.addListenerToMicrophone();
+      }
+
+      await _manager.transcription.displayText('Recording started.');
+      debugPrint("Transcription (re)started");
     } else {
-      await _manager.microphone.enable();
-      _audioPipeline.addListenerToMicrophone();
+      //wo glasses
+      _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
+      _clearDisplayQueue();
+      await _ws.startAudioStream();
+      await _phoneAudio.start(
+        (pcm) {
+          if (_ws.connected.value) _ws.sendAudio(pcm);
+        },
+      );
     }
-
-    await _manager.transcription.displayText('Recording started.');
-    debugPrint("Transcription (re)started");
+    _isRecording.value = true;
   }
 
   /// End a transcription session
   Future<void> _stopTranscription() async {
-    _clearDisplayQueue();
-    await _manager.transcription.displayText('Recording stopped.');
-    await Future.delayed(const Duration(seconds: 2));
-    if (_usePhoneMic) {
-      await _phoneAudio.stop();
+    _isRecording.value = false;
+    if (_manager.isConnected) {
+      _clearDisplayQueue();
+      await _manager.transcription.displayText('Recording stopped.');
+      await Future.delayed(const Duration(seconds: 2));
+      if (_usePhoneMic) {
+        await _phoneAudio.stop();
+      } else {
+        await _manager.microphone.disable();
+        await _audioPipeline.stop();
+      }
+      // lisätty jotta paketit kerkiävät lähteä ennen sulkemista
+      await Future.delayed(const Duration(milliseconds: 200));
+      await _ws.stopAudioStream();
+      await _manager.transcription.stop();
     } else {
-      await _manager.microphone.disable();
-      await _audioPipeline.stop();
+      await _phoneAudio.stop();
+      await _ws.stopAudioStream();
     }
-    // lisätty jotta paketit kerkiävät lähteä ennen sulkemista
-    await Future.delayed(const Duration(milliseconds: 200));
-    await _ws.stopAudioStream();
-    await _manager.transcription.stop();
   }
 
   @override
@@ -363,7 +351,7 @@ class _LandingScreenState extends State<LandingScreen> {
                         // Start / Stop recording
                         Expanded(
                           child: ValueListenableBuilder<bool>(
-                            valueListenable: _manager.transcription.isActive,
+                            valueListenable: _isRecording,
                             builder: (context, isRecording, _) {
                               return InkWell(
                                 onTap: () async {
@@ -440,6 +428,27 @@ class _LandingScreenState extends State<LandingScreen> {
 
                     const SizedBox(height: 22),
 
+                    ValueListenableBuilder<String>(
+                      valueListenable: _ws.aiResponse,
+                      builder: (context, aiResponse, _) {
+                        if (aiResponse.isEmpty) return const SizedBox.shrink();
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            aiResponse,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 8),
                     Center(
                       child: Container(
                         padding: const EdgeInsets.symmetric(

@@ -33,6 +33,7 @@ class WebsocketService {
 
   final committedText = ValueNotifier<String>('');
   final interimText = ValueNotifier<String>('');
+  final aiResponse = ValueNotifier<String>('');
 
   /// Whether the backend's ASR (speech recognition) engine is active.
   /// Can be used for UI indicator
@@ -75,6 +76,10 @@ class WebsocketService {
             } else if (data['cmd'] == 'asr_stopped') {
               asrActive.value = false;
             }
+          } else if (type == 'ai') {
+            String response = data['data'];
+            aiResponse.value = response;
+            debugPrint(response);
           } else if (type == 'error') {
             //todo
           }
@@ -101,6 +106,7 @@ class WebsocketService {
       connected.value = false;
       committedText.value = '';
       interimText.value = '';
+      aiResponse.value = '';
     }
   }
 
@@ -135,5 +141,6 @@ class WebsocketService {
     committedText.dispose();
     interimText.dispose();
     asrActive.dispose();
+    aiResponse.dispose();
   }
 }
