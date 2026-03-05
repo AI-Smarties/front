@@ -134,6 +134,19 @@ When you return to coding:
 ```
 
 ---
+## Build app to android
+
+run command
+
+```bash
+flutter build apk --dart-define-from-file=config_staging.json
+```
+
+then install it to usb connected android phone
+
+```bash
+flutter install
+```
 
 ## Project structure (Flutter)
 
