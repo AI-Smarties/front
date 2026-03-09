@@ -22,10 +22,21 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 class WebsocketService {
   final String baseUrl;
 
+  static const String _defaultBaseUrl = '127.0.0.1:8000';
+  static const String _apiUrlFromEnv = String.fromEnvironment('API_URL');
+
   WebsocketService({
-    this.baseUrl =
-        const String.fromEnvironment('API_URL', defaultValue: '127.0.0.1:8000'),
-  });
+    String? baseUrl,
+  }) : baseUrl = baseUrl ??
+            const String.fromEnvironment('API_URL',
+                defaultValue: _defaultBaseUrl) {
+    if (baseUrl == null && _apiUrlFromEnv.isEmpty) {
+      debugPrint(
+        'WARNING: API_URL is not set; using default baseUrl=$_defaultBaseUrl. '
+        'Set via --dart-define-from-file=config_<preset>.json',
+      );
+    }
+  }
 
   WebSocketChannel? _audioChannel;
 
@@ -45,8 +56,13 @@ class WebsocketService {
 
   Future<void> connect() async {
     if (connected.value) return;
+    final Uri uri;
     try {
-      final uri = Uri.parse('ws://$baseUrl/ws/');
+      if (baseUrl.contains(":443")) {
+        uri = Uri.parse('wss://$baseUrl/ws/');
+      } else {
+        uri = Uri.parse('ws://$baseUrl/ws/');
+      }
       _audioChannel = WebSocketChannel.connect(uri);
       await _audioChannel!.ready;
 

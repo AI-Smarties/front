@@ -45,6 +45,4 @@ app.*.map.json
 /android/app/.*/*
 
 
-config_dev.json
-config_staging.json
-config_test.json
+config_*.json
