@@ -310,7 +310,7 @@ class _LandingScreenState extends State<LandingScreen> {
                                 children: [
                                   _usePhoneMic
                                       ? const Icon(
-                                          Icons.mic,
+                                          Icons.phone_android,
                                           size: 22,
                                           color: Colors.lightGreen,
                                         )
@@ -323,8 +323,8 @@ class _LandingScreenState extends State<LandingScreen> {
                                   Expanded(
                                     child: Text(
                                       _usePhoneMic
-                                          ? 'Phone mic\n(Active)'
-                                          : 'Glasses mic\n(Active)',
+                                          ? 'Switch to glasses mic'
+                                          : 'Switch to phone mic',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 13,
