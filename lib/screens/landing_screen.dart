@@ -35,6 +35,7 @@ class _LandingScreenState extends State<LandingScreen> {
   late final PhoneAudioService _phoneAudio;
 
   bool _usePhoneMic = false;
+  bool _isMuted = false;
   final ValueNotifier<bool> _isRecording = ValueNotifier(false);
 
   final List<String> _displayedSentences = [];
@@ -415,12 +416,61 @@ class _LandingScreenState extends State<LandingScreen> {
 
                         const SizedBox(width: 14),
 
-                        // Recordings placeholder
+                        // Mute button
                         Expanded(
-                          child: LandingTile(
-                            icon: Icons.play_circle_outline,
-                            label: 'Recordings',
-                            onTap: () {},
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _isMuted = !_isMuted;
+                              });
+                            },
+                            child: Container(
+                              height: 72,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
+                              decoration: BoxDecoration(
+                                color: _isMuted
+                                    ? Colors.orange
+                                        .withAlpha((0.15 * 255).round())
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: _isMuted
+                                      ? Colors.orange
+                                      : Colors.black12,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _isMuted
+                                        ? Icons.comments_disabled_outlined
+                                        : Icons.comment_outlined,
+                                    size: 22,
+                                    color: _isMuted
+                                        ? Colors.orange
+                                        : Colors.grey[700],
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      _isMuted ? 'Unmute display' : 'Mute display',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: _isMuted
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color: _isMuted
+                                            ? Colors.orange
+                                            : Colors.grey[800],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ],
