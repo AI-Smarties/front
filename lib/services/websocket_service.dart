@@ -21,18 +21,15 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 ///     Raw PCM bytes (binary frame)
 class WebsocketService {
   final String baseUrl;
+  static const String defaultBaseUrl = '127.0.0.1:8000';
 
-  static const String _defaultBaseUrl = '127.0.0.1:8000';
-  static const String _apiUrlFromEnv = String.fromEnvironment('API_URL');
-
-  WebsocketService({
-    String? baseUrl,
-  }) : baseUrl = baseUrl ??
+  WebsocketService({String? baseUrl})
+      : baseUrl = baseUrl ??
             const String.fromEnvironment('API_URL',
-                defaultValue: _defaultBaseUrl) {
-    if (baseUrl == null && _apiUrlFromEnv.isEmpty) {
+                defaultValue: defaultBaseUrl) {
+    if (baseUrl == null && const String.fromEnvironment('API_URL').isEmpty) {
       debugPrint(
-        'WARNING: API_URL is not set; using default baseUrl=$_defaultBaseUrl. '
+        'WARNING: API_URL is not set; using default baseUrl=$defaultBaseUrl. '
         'Set via --dart-define-from-file=config_<preset>.json',
       );
     }
