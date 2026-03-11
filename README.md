@@ -1,6 +1,6 @@
 ![GHA workflow badge](https://github.com/AI-Smarties/front/actions/workflows/main.yml/badge.svg)
 
-# AI-Smarties - Frontend (Flutter)
+# AI-Smarties - Frontend (Dart + Flutter)
 
 ## Requirements
 
@@ -22,7 +22,7 @@
 ## 2. Switch to development branch (dev)
 
 ```bash
-    git checkout dev
+    git switch dev
 ```
 
 ## 3. Confirm the Flutter environment
@@ -148,9 +148,7 @@ then install it to usb connected android phone
 flutter install
 ```
 
-## Project structure (Flutter)
-
-When `flutter create .` is run, the structure is typically:
+## Project structure
 
 - `lib/` – Application UI and application logic
 - `test/` – Unit- and widget testing
@@ -164,3 +162,6 @@ When `flutter create .` is run, the structure is typically:
 ## About
 
 Frontend for Everyday AI productivity interface for Even Realities G1 smart glasses.
+
+## Backend integration
+Frontend is intended to be used with the [FastAPI backend](https://github.com/AI-Smarties/back)
