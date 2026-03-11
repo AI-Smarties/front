@@ -31,13 +31,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
   }
 
-  testWidgets('App shows text input and send button',
-      (WidgetTester tester) async {
+  testWidgets('Landing screen shows key elements', (WidgetTester tester) async {
     await pumpLanding(tester);
 
     expect(find.text('Even realities G1 smart glasses'), findsOneWidget);
-    expect(find.text('Recordings'), findsOneWidget);
-    expect(find.text('Even realities G1 smart glasses'), findsOneWidget);
+    expect(find.text('Connect to glasses'), findsOneWidget);
+    expect(find.text('Switch to phone mic'), findsOneWidget);
+    expect(find.text('Start\nRecording'), findsOneWidget);
+    expect(find.text('Mute display'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.text('Register'), findsOneWidget);
 
     await disposeLanding(tester);
   });
