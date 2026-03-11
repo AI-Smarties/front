@@ -84,9 +84,13 @@ class _LandingScreenState extends State<LandingScreen> {
 
     debugPrint(aiResponse);
 
-    debugPrint("→ Adding to display: '$aiResponse'");
-    if (_manager.isConnected && _manager.transcription.isActive.value) {
-      _addSentenceToDisplay(aiResponse);
+    if (!_isMuted) {
+      debugPrint("→ Adding to display: '$aiResponse'");
+      if (_manager.isConnected && _manager.transcription.isActive.value) {
+        _addSentenceToDisplay(aiResponse);
+      }
+    } else {
+      debugPrint("→ Display is muted, skipping display update: '$aiResponse'");
     }
   }
 
