@@ -106,6 +106,12 @@ class WebsocketService {
     }
   }
 
+  void sendCalendarContext(Map<String, dynamic> payload) {
+    if (connected.value) {
+      _audioChannel?.sink.add(jsonEncode(payload));
+    }
+  }
+
   /// Tell the backend to stop expecting audio data.
   Future<void> stopAudioStream() async {
     if (connected.value) {

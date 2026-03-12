@@ -6,6 +6,7 @@ import '../widgets/g1_connection.dart';
 import '../services/websocket_service.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import '../services/calendar_service.dart';
 
 /// Landing screen of the app. Manages BLE glasses connection,
 /// audio streaming, and live transcription display.
@@ -30,6 +31,7 @@ class _LandingScreenState extends State<LandingScreen> {
   late final Lc3Decoder _decoder;
   late final WebsocketService _ws;
   late final AudioPipeline _audioPipeline;
+  late final CalendarService _calendarService;
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _LandingScreenState extends State<LandingScreen> {
     _manager = widget.manager ?? G1Manager();
     _decoder = widget.decoder ?? Lc3Decoder();
     _ws = widget.ws ?? WebsocketService();
+    _calendarService = CalendarService();
     _audioPipeline = widget.audioPipeline ??
         AudioPipeline(
           _manager,
@@ -106,10 +109,16 @@ class _LandingScreenState extends State<LandingScreen> {
             children: [
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.menu, color: Color(0xFF00239D)),
-                  ),
+                 SizedBox(
+                    width: 96,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.menu, color: Color(0xFF00239D)),
+                      ),
+                    ),
+                 ),
                   const Spacer(),
                   Image.asset(
                     'assets/images/Elisa_logo_blue_RGB.png',
@@ -166,6 +175,15 @@ class _LandingScreenState extends State<LandingScreen> {
                       manager: _manager,
                       onRecordToggle: () async {
                         if (!_manager.transcription.isActive.value) {
+                          final granted = await _calendarService.requestPermission();
+                          if (granted) {
+                            final events = await _calendarService.getUpcomingEvents();
+                            final activeEvent = _calendarService.selectActiveContext(events);
+                            if (activeEvent != null) {
+                              final payload = _calendarService.buildCalendarPayload(activeEvent);
+                              _ws.sendCalendarContext(payload);
+                            }
+                          }
                           await _startTranscription();
                         } else {
                           await _stopTranscription();
