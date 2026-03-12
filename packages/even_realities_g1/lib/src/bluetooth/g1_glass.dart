@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -51,10 +52,12 @@ class G1Glass {
     try {
       await device.connect();
       await _discoverServices();
-      await device.requestMtu(BluetoothConstants.defaultMtu);
-      await device.requestConnectionPriority(
-        connectionPriorityRequest: ConnectionPriority.high,
-      );
+      if (!kIsWeb && Platform.isAndroid) {
+        await device.requestMtu(BluetoothConstants.defaultMtu);
+        await device.requestConnectionPriority(
+          connectionPriorityRequest: ConnectionPriority.high,
+        );
+      }
       _startHeartbeat();
       debugPrint('[$side Glass] Connected successfully');
     } catch (e) {

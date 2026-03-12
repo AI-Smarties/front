@@ -66,6 +66,7 @@ class G1Manager {
   Timer? _scanTimer;
   StreamSubscription? _scanSubscription;
   bool _isScanning = false;
+  bool _isConnecting = false;
   int _retryCount = 0;
   bool _connectionCallbackFired = false;
 
@@ -166,7 +167,7 @@ class G1Manager {
       throw Exception(msg);
     }
 
-    final adapterState = await FlutterBluePlus.adapterState.first;
+    final adapterState = FlutterBluePlus.adapterStateNow;
     if (adapterState != BluetoothAdapterState.on) {
       const msg = 'Bluetooth is turned off';
       onUpdate?.call(msg);
@@ -175,6 +176,7 @@ class G1Manager {
 
     // Reset state
     _isScanning = true;
+    _isConnecting = false;
     _retryCount = 0;
     _connectionCallbackFired = false;
     _leftGlass = null;
@@ -204,7 +206,9 @@ class G1Manager {
   ) async {
     try {
       // Check system connected devices
-      final connectedDevices = await FlutterBluePlus.systemDevices([]);
+      final connectedDevices = await FlutterBluePlus.systemDevices([
+        Guid(BluetoothConstants.uartServiceUuid),
+      ]);
       debugPrint('Found ${connectedDevices.length} system connected devices');
 
       for (final device in connectedDevices) {
@@ -381,11 +385,57 @@ class G1Manager {
     }
 
     if (glass != null) {
-      await glass.connect();
-      _setupReconnect(glass);
+      if (_leftGlass != null && _rightGlass != null && !_isConnecting) {
+        await _connectDiscoveredGlasses(
+          onUpdate,
+          onGlassesFound,
+          onConnected,
+        );
+      }
+    }
+  }
 
-      // Check if both glasses are now connected after this connection completes
+  Future<void> _connectDiscoveredGlasses(
+    OnStatusUpdate? onUpdate,
+    OnGlassesFound? onGlassesFound,
+    OnConnected? onConnected,
+  ) async {
+    if (_leftGlass == null || _rightGlass == null || _isConnecting) return;
+
+    _isConnecting = true;
+    _connectionStateController.add(const G1ConnectionEvent(
+      state: G1ConnectionState.connecting,
+    ));
+    onConnectionChanged?.call(G1ConnectionState.connecting, null);
+    onUpdate?.call('Connecting to glasses...');
+
+    try {
+      if (_isScanning) {
+        await stopScan();
+      }
+
+      if (!_leftGlass!.isConnected) {
+        await _leftGlass!.connect();
+        _setupReconnect(_leftGlass!);
+      }
+
+      if (!_rightGlass!.isConnected) {
+        await _rightGlass!.connect();
+        _setupReconnect(_rightGlass!);
+      }
+
       _checkBothConnected(onUpdate, onGlassesFound, onConnected);
+    } catch (e, st) {
+      debugPrint('Error connecting discovered glasses: $e');
+      debugPrintStack(stackTrace: st);
+      onUpdate?.call('Failed to connect to glasses: $e');
+      _connectionStateController.add(G1ConnectionEvent(
+        state: G1ConnectionState.error,
+        errorMessage: e.toString(),
+      ));
+      onConnectionChanged?.call(G1ConnectionState.error, null);
+    } finally {
+      _isConnecting = false;
     }
   }
 
