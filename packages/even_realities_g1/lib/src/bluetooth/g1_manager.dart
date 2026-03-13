@@ -358,7 +358,7 @@ class G1Manager {
 
     if (deviceName.contains(BluetoothConstants.leftGlassPattern) &&
         _leftGlass == null) {
-      debugPrint('Found left glass: $deviceName');
+      // debugPrint('Found left glass: $deviceName'); // Kommentoitu pois spämmin takia
       glass = G1Glass(
         name: deviceName,
         device: result.device,
@@ -369,7 +369,7 @@ class G1Manager {
       onUpdate?.call('Left glass found: $deviceName');
     } else if (deviceName.contains(BluetoothConstants.rightGlassPattern) &&
         _rightGlass == null) {
-      debugPrint('Found right glass: $deviceName');
+      // debugPrint('Found right glass: $deviceName'); // Kommentoitu pois spämmin takia
       glass = G1Glass(
         name: deviceName,
         device: result.device,
@@ -434,10 +434,11 @@ class G1Manager {
 
   void _setupReconnect(G1Glass glass) {
     glass.connectionState.listen((state) {
-      debugPrint('[${glass.side} Glass] Connection state: $state');
+      // debugPrint('[${glass.side} Glass] Connection state: $state');
       if (state == BluetoothConnectionState.disconnected) {
-        debugPrint('[${glass.side} Glass] Attempting reconnect...');
-        glass.connect();
+        // debugPrint('[${glass.side} Glass] Attempting reconnect...');
+        // glass.connect(); // Kommentoitu pois sen takia että se tämä ei anna katkaista napista
+        // yhteyttä ja aiheuttaa sen takia ikuisen loopin
       }
     });
   }

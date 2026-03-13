@@ -21,11 +21,19 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 ///     Raw PCM bytes (binary frame)
 class WebsocketService {
   final String baseUrl;
+  static const String defaultBaseUrl = '127.0.0.1:8000';
 
-  WebsocketService({
-    this.baseUrl =
-        const String.fromEnvironment('API_URL', defaultValue: '127.0.0.1:8000'),
-  });
+  WebsocketService({String? baseUrl})
+      : baseUrl = baseUrl ??
+            const String.fromEnvironment('API_URL',
+                defaultValue: defaultBaseUrl) {
+    if (baseUrl == null && const String.fromEnvironment('API_URL').isEmpty) {
+      debugPrint(
+        'WARNING: API_URL is not set; using default baseUrl=$defaultBaseUrl. '
+        'Set via --dart-define-from-file=config_<preset>.json',
+      );
+    }
+  }
 
   WebSocketChannel? _audioChannel;
 
@@ -33,6 +41,7 @@ class WebsocketService {
 
   final committedText = ValueNotifier<String>('');
   final interimText = ValueNotifier<String>('');
+  final aiResponse = ValueNotifier<String>('');
 
   /// Whether the backend's ASR (speech recognition) engine is active.
   /// Can be used for UI indicator
@@ -44,8 +53,13 @@ class WebsocketService {
 
   Future<void> connect() async {
     if (connected.value) return;
+    final Uri uri;
     try {
-      final uri = Uri.parse('ws://$baseUrl/ws/');
+      if (baseUrl.contains(":443")) {
+        uri = Uri.parse('wss://$baseUrl/ws/');
+      } else {
+        uri = Uri.parse('ws://$baseUrl/ws/');
+      }
       _audioChannel = WebSocketChannel.connect(uri);
       await _audioChannel!.ready;
 
@@ -54,7 +68,19 @@ class WebsocketService {
           final data = jsonDecode(msg as String);
           final type = data['type'];
 
-          if (type == 'control') {
+          if (type == 'transcript') {
+            debugPrint("WS RECEIVED TRANSCRIPT: ${data['data']}");
+            final status = data['data']['status'];
+            if (status == 'partial') {
+              interimText.value =
+                  (data['data']['text'] ?? '').toString().trim();
+              debugPrint("→ Interim updated: ${interimText.value}");
+            } else if (status == 'final') {
+              committedText.value =
+                  (data['data']['text'] ?? '').toString().trim();
+              debugPrint("→ Final/committed updated: ${committedText.value}");
+            }
+          } else if (type == 'control') {
             // Server signals readiness or ASR state changes
             if (data['cmd'] == 'ready') {
               connected.value = true;
@@ -63,16 +89,10 @@ class WebsocketService {
             } else if (data['cmd'] == 'asr_stopped') {
               asrActive.value = false;
             }
-          } else if (type == 'transcript') {
-            // Speech-to-text results: partial (interim) or final (committed)
-            final status = data['data']['status'];
-            if (status == 'partial') {
-              interimText.value =
-                  (data['data']['text'] ?? '').toString().trim();
-            } else if (status == 'final') {
-              committedText.value =
-                  (data['data']['text'] ?? '').toString().trim();
-            }
+          } else if (type == 'ai') {
+            String response = data['data'];
+            aiResponse.value = response;
+            debugPrint(response);
           } else if (type == 'error') {
             //todo
           }
@@ -86,9 +106,12 @@ class WebsocketService {
   }
 
   Future<void> disconnect() async {
+    final channel = _audioChannel;
+    _audioChannel = null; // Asetetaan heti nulliksi
+    connected.value = false;
     try {
-      _audioChannel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'stop'}));
-      await _audioChannel?.sink.close();
+      channel?.sink.add(jsonEncode({'type': 'control', 'cmd': 'stop'}));
+      await channel?.sink.close().timeout(const Duration(milliseconds: 500));
     } catch (_) {
       // Connection already closed or network gone
     } finally {
@@ -96,6 +119,7 @@ class WebsocketService {
       connected.value = false;
       committedText.value = '';
       interimText.value = '';
+      aiResponse.value = '';
     }
   }
 
@@ -136,5 +160,6 @@ class WebsocketService {
     committedText.dispose();
     interimText.dispose();
     asrActive.dispose();
+    aiResponse.dispose();
   }
 }

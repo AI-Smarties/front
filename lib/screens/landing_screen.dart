@@ -4,9 +4,11 @@ import 'package:front/services/lc3_decoder.dart';
 import 'package:front/services/audio_pipeline.dart';
 import '../widgets/g1_connection.dart';
 import '../services/websocket_service.dart';
+import '../services/phone_audio_service.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import '../services/calendar_service.dart';
+import 'dart:async';
 
 /// Landing screen of the app. Manages BLE glasses connection,
 /// audio streaming, and live transcription display.
@@ -32,6 +34,13 @@ class _LandingScreenState extends State<LandingScreen> {
   late final WebsocketService _ws;
   late final AudioPipeline _audioPipeline;
   late final CalendarService _calendarService;
+  late final PhoneAudioService _phoneAudio;
+
+  bool _usePhoneMic = false;
+  final ValueNotifier<bool> _isRecording = ValueNotifier(false);
+
+  final List<String> _displayedSentences = [];
+  static const int _maxDisplayedSentences = 4;
 
   @override
   void initState() {
@@ -47,55 +56,130 @@ class _LandingScreenState extends State<LandingScreen> {
           _manager,
           _decoder,
           onPcmData: (pcm) {
-            // Forward decoded pcm audio to the backend via WebSocket
             if (_ws.connected.value) _ws.sendAudio(pcm);
           },
         );
 
-    // Connect to backend WebSocket server when homePage is initialized
+    // Connect to backend WebSocket
     _ws.connect();
 
-    // Add listener for mic audio packets from glasses
-    _audioPipeline.addListenerToMicrophone();
+    _phoneAudio = PhoneAudioService();
+    _phoneAudio.init();
 
-    // React to Speech to text updates from the backend
-    // Used to update the UI (fired when committedText/interimText is changed)
-    _ws.committedText.addListener(_onWsChange);
-    _ws.interimText.addListener(_onWsChange);
+    // React to committed (final) text only — interim is too noisy for glasses
+    _ws.aiResponse.addListener(_onAiResponse);
   }
 
   @override
   void dispose() {
-    _ws.committedText.removeListener(_onWsChange);
-    _ws.interimText.removeListener(_onWsChange);
+    _ws.aiResponse.removeListener(_onAiResponse);
+    _isRecording.dispose();
     _audioPipeline.dispose();
+    _phoneAudio.dispose();
     _ws.dispose();
     _manager.dispose();
     super.dispose();
   }
 
-  /// Forwards changes to the glasses display if connected and transcription is active.
-  void _onWsChange() {
+  void _onAiResponse() {
+    final aiResponse = _ws.aiResponse.value;
+
+    debugPrint(aiResponse);
+
+    debugPrint("→ Adding to display: '$aiResponse'");
     if (_manager.isConnected && _manager.transcription.isActive.value) {
-      final text = _ws.getFullText();
-      _manager.transcription.displayText(
-        text,
-        isInterim: _ws.interimText.value.isNotEmpty,
-      );
+      _addSentenceToDisplay(aiResponse);
     }
+  }
+
+  /// Adds a sentence to the on-screen queue.
+  ///
+  /// Each sentence is a separate BLE packet (lineNumber 1..N).
+  /// When the list is full, the oldest sentence is evicted to make room.
+  /// Sentences never disappear on a timer — they scroll off only when
+  /// pushed out by new ones.
+  void _addSentenceToDisplay(String sentence) {
+    if (_displayedSentences.length >= _maxDisplayedSentences) {
+      _displayedSentences.removeAt(0);
+    }
+
+    _displayedSentences.add(sentence);
+    _manager.transcription.displayLines(
+      List.unmodifiable(_displayedSentences),
+    );
+
+    Future.delayed(const Duration(seconds: 10), () {
+      _displayedSentences.remove(sentence);
+      _manager.transcription.displayLines(
+        List.unmodifiable(_displayedSentences),
+      );
+    });
+  }
+
+  void _clearDisplayQueue() {
+    _displayedSentences.clear();
   }
 
   /// Begin a transcription session
   Future<void> _startTranscription() async {
-    await _ws.startAudioStream();
-    await _manager.transcription.start();
+    if (_manager.isConnected) {
+      //glasses implementation
+      await _manager.transcription.stop(); // pakota clean stop ensin
+      await Future.delayed(const Duration(milliseconds: 300));
+      _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
+      _clearDisplayQueue();
+
+      await _ws.startAudioStream();
+      await _manager.transcription.start();
+
+      if (_usePhoneMic) {
+        await _phoneAudio.start((pcm) {
+          if (_ws.connected.value) {
+            _ws.sendAudio(pcm);
+          }
+        });
+      } else {
+        await _manager.microphone.enable();
+        _audioPipeline.addListenerToMicrophone();
+      }
+
+      await _manager.transcription.displayText('Recording started.');
+      debugPrint("Transcription (re)started");
+    } else {
+      //wo glasses
+      _ws.clearCommittedText(); // reset accumulated text — backend starts fresh too
+      _clearDisplayQueue();
+      await _ws.startAudioStream();
+      await _phoneAudio.start(
+        (pcm) {
+          if (_ws.connected.value) _ws.sendAudio(pcm);
+        },
+      );
+    }
+    _isRecording.value = true;
   }
 
   /// End a transcription session
   Future<void> _stopTranscription() async {
-    await _audioPipeline.stop();
-    await _ws.stopAudioStream();
-    await _manager.transcription.stop();
+    _isRecording.value = false;
+    if (_manager.isConnected) {
+      _clearDisplayQueue();
+      await _manager.transcription.displayText('Recording stopped.');
+      await Future.delayed(const Duration(seconds: 2));
+      if (_usePhoneMic) {
+        await _phoneAudio.stop();
+      } else {
+        await _manager.microphone.disable();
+        await _audioPipeline.stop();
+      }
+      // lisätty jotta paketit kerkiävät lähteä ennen sulkemista
+      await Future.delayed(const Duration(milliseconds: 200));
+      await _ws.stopAudioStream();
+      await _manager.transcription.stop();
+    } else {
+      await _phoneAudio.stop();
+      await _ws.stopAudioStream();
+    }
   }
 
   @override
@@ -107,8 +191,10 @@ class _LandingScreenState extends State<LandingScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           child: Column(
             children: [
+              // ===== YLÄBANNERI =====
               Row(
                 children: [
+                  // Vasen
                   SizedBox(
                     width: 96,
                     child: Align(
@@ -119,40 +205,50 @@ class _LandingScreenState extends State<LandingScreen> {
                       ),
                     ),
                   ),
-                  const Spacer(),
-                  Image.asset(
-                    'assets/images/Elisa_logo_blue_RGB.png',
-                    height: 50,
-                    fit: BoxFit.contain,
+
+                  // Logo keskelle
+                  Expanded(
+                    child: Center(
+                      child: Image.asset(
+                        'assets/images/Elisa_logo_blue_RGB.png',
+                        height: 40,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
-                  const Spacer(),
-                  Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ListenableBuilder(
-                        listenable: _ws.connected,
-                        builder: (context, _) => _ws.connected.value
-                            ? const Row(
-                                children: [
-                                  Icon(Icons.signal_cellular_alt,
-                                      color: Colors.green, size: 20),
-                                  SizedBox(width: 6),
-                                  Text('Connected',
-                                      style: TextStyle(
-                                          fontSize: 12, color: Colors.green)),
-                                ],
-                              )
-                            : OutlinedButton.icon(
-                                onPressed: () => _ws.connect(),
-                                icon: const Icon(Icons.refresh, size: 18),
-                                label: const Text('Reconnect to server'),
-                              ),
-                      )),
-                  IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.wb_sunny_outlined,
-                          color: Color(0xFF00239D))),
+
+                  // Oikea
+                  SizedBox(
+                    width: 96,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ListenableBuilder(
+                          listenable: _ws.connected,
+                          builder: (context, _) => _ws.connected.value
+                              ? const Icon(
+                                  Icons.signal_cellular_alt,
+                                  color: Colors.green,
+                                  size: 20,
+                                )
+                              : IconButton(
+                                  onPressed: () => _ws.connect(),
+                                  icon: const Icon(Icons.refresh),
+                                ),
+                        ),
+                        IconButton(
+                          onPressed: () {},
+                          icon: const Icon(
+                            Icons.wb_sunny_outlined,
+                            color: Color(0xFF00239D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
+
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -162,7 +258,9 @@ class _LandingScreenState extends State<LandingScreen> {
                       height: 120,
                       fit: BoxFit.contain,
                     ),
+
                     const SizedBox(height: 6),
+
                     const Text(
                       'Even realities G1 smart glasses',
                       style: TextStyle(
@@ -170,41 +268,177 @@ class _LandingScreenState extends State<LandingScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+
                     const SizedBox(height: 34),
-                    GlassesConnection(
-                      manager: _manager,
-                      onRecordToggle: () async {
-                        if (!_manager.transcription.isActive.value) {
-                          final granted =
-                              await _calendarService.requestPermission();
-                          if (granted) {
-                            final events =
-                                await _calendarService.getUpcomingEvents();
-                            final activeEvent =
-                                _calendarService.selectActiveContext(events);
-                            if (activeEvent != null) {
-                              final payload = _calendarService
-                                  .buildCalendarPayload(activeEvent);
-                              _ws.sendCalendarContext(payload);
-                            }
-                          }
-                          await _startTranscription();
-                        } else {
-                          await _stopTranscription();
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 14),
+
+                    // ===== CONNECT
                     Row(
                       children: [
+                        // Connect / Disconnect
                         Expanded(
-                          child: LandingTile(
-                            icon: Icons.list_alt,
-                            label: 'Key points',
-                            onTap: () {},
+                          child: GlassesConnection(
+                            manager: _manager,
+                            onRecordToggle: () async {
+                              if (!_manager.transcription.isActive.value) {
+                                final granted =
+                                    await _calendarService.requestPermission();
+                                if (granted) {
+                                  final events =
+                                      await _calendarService.getUpcomingEvents();
+                                  final activeEvent =
+                                      _calendarService.selectActiveContext(events);
+                                  if (activeEvent != null) {
+                                    final payload = _calendarService
+                                        .buildCalendarPayload(activeEvent);
+                                    _ws.sendCalendarContext(payload);
+                                  }
+                                }
+                                await _startTranscription();
+                              } else {
+                                await _stopTranscription();
+                              }
+                            },
                           ),
                         ),
+
                         const SizedBox(width: 14),
+
+                        // Mic toggle
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _usePhoneMic = !_usePhoneMic;
+                              });
+                            },
+                            child: Container(
+                              height: 72,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
+                              decoration: BoxDecoration(
+                                color: _usePhoneMic
+                                    ? Colors.lightGreen
+                                        .withAlpha((0.15 * 255).round())
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: _usePhoneMic
+                                      ? Colors.lightGreen
+                                      : Colors.black12,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _usePhoneMic
+                                      ? const Icon(
+                                          Icons.mic,
+                                          size: 22,
+                                          color: Colors.lightGreen,
+                                        )
+                                      : Image.asset(
+                                          'assets/images/g1-smart-glasses.webp',
+                                          height: 22,
+                                          fit: BoxFit.contain,
+                                        ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      _usePhoneMic
+                                          ? 'Phone mic\n(Active)'
+                                          : 'Glasses mic\n(Active)',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: _usePhoneMic
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color: _usePhoneMic
+                                            ? Colors.lightGreen
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    Row(
+                      children: [
+                        // Start / Stop recording
+                        Expanded(
+                          child: ValueListenableBuilder<bool>(
+                            valueListenable: _isRecording,
+                            builder: (context, isRecording, _) {
+                              return InkWell(
+                                onTap: () async {
+                                  if (!isRecording) {
+                                    await _startTranscription();
+                                  } else {
+                                    await _stopTranscription();
+                                  }
+                                },
+                                child: Container(
+                                  height: 72,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14),
+                                  decoration: BoxDecoration(
+                                    color: isRecording
+                                        ? Colors.red
+                                            .withAlpha((0.15 * 255).round())
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: isRecording
+                                          ? Colors.red
+                                          : Colors.black12,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        isRecording
+                                            ? Icons.stop_circle_outlined
+                                            : Icons.fiber_manual_record,
+                                        size: 22,
+                                        color: isRecording
+                                            ? Colors.red
+                                            : Colors.grey[800],
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          isRecording
+                                              ? 'Stop\nRecording'
+                                              : 'Start\nRecording',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: isRecording
+                                                ? Colors.red
+                                                : Colors.grey[800],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        // Recordings placeholder
                         Expanded(
                           child: LandingTile(
                             icon: Icons.play_circle_outline,
@@ -214,7 +448,30 @@ class _LandingScreenState extends State<LandingScreen> {
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 22),
+
+                    ValueListenableBuilder<String>(
+                      valueListenable: _ws.aiResponse,
+                      builder: (context, aiResponse, _) {
+                        if (aiResponse.isEmpty) return const SizedBox.shrink();
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            aiResponse,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 8),
                     Center(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -236,48 +493,51 @@ class _LandingScreenState extends State<LandingScreen> {
                   ],
                 ),
               ),
+
+              // ===== LOGIN / REGISTER =====
               Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Sign in',
-                          style: TextStyle(
-                            color: Color(0xFF00239D),
-                            fontWeight: FontWeight.bold,
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
                           ),
+                        );
+                      },
+                      child: const Text(
+                        'Sign in',
+                        style: TextStyle(
+                          color: Color(0xFF00239D),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Text('|'),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Register',
-                          style: TextStyle(
-                            color: Color(0xFF00239D),
-                            fontWeight: FontWeight.bold,
+                    ),
+                    const Text('|'),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
                           ),
+                        );
+                      },
+                      child: const Text(
+                        'Register',
+                        style: TextStyle(
+                          color: Color(0xFF00239D),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
-                  )),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -305,7 +565,7 @@ class LandingTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 64,
+        height: 72,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.black12),
@@ -313,12 +573,19 @@ class LandingTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22),
+            Icon(
+              icon,
+              size: 22,
+              color: Colors.grey[700],
+            ),
             const SizedBox(width: 10),
             Expanded(
                 child: Text(
               label,
-              style: const TextStyle(fontSize: 14),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[800],
+              ),
             )),
           ],
         ),

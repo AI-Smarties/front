@@ -41,6 +41,11 @@ class AudioPipeline {
         }
         // Add to buffer
         _audioCollector.addChunk(data.seq, data.data);
+        if (_audioCollector.chunkCount >= 5) {
+          _getPcmDataAndClearBuffer().then((pcm) {
+            if (pcm != null) onPcmData(pcm);
+          });
+        }
       },
       onError: (error) {
         //todo
@@ -55,10 +60,10 @@ class AudioPipeline {
     return await _decoder.decodeLc3(lc3Data);
   }
 
-  /// Start a periodic timer that flushes the audio buffer every 500 ms.
+  /// Start a periodic timer that flushes the audio buffer every 500 ms. // Changed 100ms
   void _startSendTimer() {
     _sendTimer?.cancel();
-    _sendTimer = Timer.periodic(const Duration(milliseconds: 500), (_) async {
+    _sendTimer = Timer.periodic(const Duration(milliseconds: 100), (_) async {
       Uint8List? pcmData = await _getPcmDataAndClearBuffer();
       if (pcmData != null) onPcmData(pcmData);
     });
@@ -67,6 +72,8 @@ class AudioPipeline {
   /// Stop recording: cancel the flush timer, send any remaining
   /// buffered audio, and mark recording as inactive.
   Future<void> stop() async {
+    await _audioSubscription?.cancel();
+    _audioSubscription = null;
     _sendTimer?.cancel();
     _sendTimer = null;
     Uint8List? pcm = await _getPcmDataAndClearBuffer();
