@@ -283,10 +283,10 @@ class _LandingScreenState extends State<LandingScreen> {
                                 final granted =
                                     await _calendarService.requestPermission();
                                 if (granted) {
-                                  final events =
-                                      await _calendarService.getUpcomingEvents();
-                                  final activeEvent =
-                                      _calendarService.selectActiveContext(events);
+                                  final events = await _calendarService
+                                      .getUpcomingEvents();
+                                  final activeEvent = _calendarService
+                                      .selectActiveContext(events);
                                   if (activeEvent != null) {
                                     final payload = _calendarService
                                         .buildCalendarPayload(activeEvent);
