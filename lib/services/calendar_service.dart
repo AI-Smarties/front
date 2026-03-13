@@ -1,13 +1,10 @@
 import 'package:device_calendar/device_calendar.dart';
 
-
-
-
 class CalendarService {
   final DeviceCalendarPlugin _calendarPlugin = DeviceCalendarPlugin();
 
   //Requests calendar permission
-  Future <bool> requestPermission () async {
+  Future<bool> requestPermission() async {
     var permissionsGranted = await _calendarPlugin.requestPermissions();
     if (permissionsGranted.isSuccess && permissionsGranted.data == true) {
       return true;
@@ -18,16 +15,15 @@ class CalendarService {
     }
   }
 
-  //Searches for upcoming events in the next 7 days 
-  Future <List<CalendarEventModel>> getUpcomingEvents() async {
+  //Searches for upcoming events in the next 7 days
+  Future<List<CalendarEventModel>> getUpcomingEvents() async {
     var calendarResult = await _calendarPlugin.retrieveCalendars();
     if (calendarResult.isSuccess && calendarResult.data != null) {
       List<Calendar> calendars = calendarResult.data!;
       List<CalendarEventModel> events = [];
-      
+
       DateTime startDate = DateTime.now();
       DateTime endDate = startDate.add(const Duration(days: 7));
-
 
       for (var calendar in calendars) {
         var eventResult = await _calendarPlugin.retrieveEvents(
@@ -48,13 +44,13 @@ class CalendarService {
                 ),
               );
             }
-          }  
+          }
         }
       }
       events.sort((a, b) => a.start.compareTo(b.start));
       return events;
     }
-    return []; 
+    return [];
   }
 
   //Selects the active or upcoming event
@@ -62,7 +58,7 @@ class CalendarService {
     DateTime now = DateTime.now();
     //Event is happening now
     for (var event in events) {
-      if (event.start.isBefore(now) && event.end.isAfter(now) ) {
+      if (event.start.isBefore(now) && event.end.isAfter(now)) {
         return event;
       }
     }
@@ -99,8 +95,6 @@ class CalendarService {
       }
     };
   }
-
-
 }
 
 // Model to represent calendar events in a simplified way for our application

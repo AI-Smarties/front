@@ -109,7 +109,7 @@ class _LandingScreenState extends State<LandingScreen> {
             children: [
               Row(
                 children: [
-                 SizedBox(
+                  SizedBox(
                     width: 96,
                     child: Align(
                       alignment: Alignment.centerLeft,
@@ -118,7 +118,7 @@ class _LandingScreenState extends State<LandingScreen> {
                         icon: const Icon(Icons.menu, color: Color(0xFF00239D)),
                       ),
                     ),
-                 ),
+                  ),
                   const Spacer(),
                   Image.asset(
                     'assets/images/Elisa_logo_blue_RGB.png',
@@ -175,12 +175,16 @@ class _LandingScreenState extends State<LandingScreen> {
                       manager: _manager,
                       onRecordToggle: () async {
                         if (!_manager.transcription.isActive.value) {
-                          final granted = await _calendarService.requestPermission();
+                          final granted =
+                              await _calendarService.requestPermission();
                           if (granted) {
-                            final events = await _calendarService.getUpcomingEvents();
-                            final activeEvent = _calendarService.selectActiveContext(events);
+                            final events =
+                                await _calendarService.getUpcomingEvents();
+                            final activeEvent =
+                                _calendarService.selectActiveContext(events);
                             if (activeEvent != null) {
-                              final payload = _calendarService.buildCalendarPayload(activeEvent);
+                              final payload = _calendarService
+                                  .buildCalendarPayload(activeEvent);
                               _ws.sendCalendarContext(payload);
                             }
                           }
