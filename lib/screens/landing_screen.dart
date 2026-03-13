@@ -2,6 +2,9 @@ import 'package:even_realities_g1/even_realities_g1.dart';
 import 'package:flutter/material.dart';
 import 'package:front/services/lc3_decoder.dart';
 import 'package:front/services/audio_pipeline.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:io';
 import '../widgets/g1_connection.dart';
 import '../services/websocket_service.dart';
 import '../services/phone_audio_service.dart';
@@ -39,6 +42,93 @@ class _LandingScreenState extends State<LandingScreen> {
 
   final List<String> _displayedSentences = [];
   static const int _maxDisplayedSentences = 4;
+
+  // Show confirmation dialog before switching to Even app
+  Future<void> _switchToEvenApp() async {
+    if (_isRecording.value) {
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Switch app"),
+          content: const Text(
+            "Glasses will disconnect and the Even app will open. Continue?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Open Even"),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) return;
+    if (_manager.isConnected) {
+      await _manager.disconnect();
+    }
+    await _openEvenApp();
+  }
+
+  // Open the Even app
+  // Android: launch the app directly via package and activity
+  // iOS: attempt possible deep link schemes, fallback to App Store
+  Future<void> _openEvenApp() async {
+    if (Platform.isAndroid) {
+      try {
+        const intent = AndroidIntent(
+          action: 'android.intent.action.MAIN',
+          package: 'com.even.g1',
+          componentName: 'com.even.g1.MainActivity',
+          flags: <int>[0x10000000],
+        );
+
+        await intent.launch();
+      } catch (_) {
+        const storeIntent = AndroidIntent(
+          action: 'android.intent.action.VIEW',
+          data: 'market://details?id=com.even.g1',
+          flags: <int>[0x10000000],
+        );
+
+        try {
+          await storeIntent.launch();
+        } catch (_) {
+          const webIntent = AndroidIntent(
+            action: 'android.intent.action.VIEW',
+            data: 'https://play.google.com/store/apps/details?id=com.even.g1',
+            flags: <int>[0x10000000],
+          );
+          await webIntent.launch();
+        }
+      }
+    } else if (Platform.isIOS) {
+      const schemes = [
+        'com.even.g1://',
+        'eveng1://',
+        'even-g1://',
+      ];
+
+      for (final scheme in schemes) {
+        final uri = Uri.parse(scheme);
+
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          return;
+        }
+      }
+
+      // jos appia ei voitu avata mennään App Storeen
+      final store = Uri.parse('https://apps.apple.com/app/id6499140518');
+      await launchUrl(store, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   void initState() {
@@ -449,24 +539,43 @@ class _LandingScreenState extends State<LandingScreen> {
                     ),
 
                     const SizedBox(height: 8),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 5),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.battery_full, size: 18),
-                            SizedBox(width: 8),
-                            Text('G1 smart glasses'),
-                          ],
-                        ),
-                      ),
-                    ),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _isRecording,
+                      builder: (context, isRecording, _) {
+                        return Center(
+                          child: GestureDetector(
+                            onTap: isRecording ? null : _switchToEvenApp,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 5),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: isRecording
+                                      ? Colors.grey
+                                      : Colors.black12,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.battery_full, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'G1 smart glasses',
+                                    style: TextStyle(
+                                      color: isRecording
+                                          ? Colors.grey
+                                          : Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    )
                   ],
                 ),
               ),
