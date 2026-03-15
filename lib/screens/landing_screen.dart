@@ -7,6 +7,7 @@ import '../services/websocket_service.dart';
 import '../services/phone_audio_service.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import '../services/calendar_service.dart';
 import 'dart:async';
 
 /// Landing screen of the app. Manages BLE glasses connection,
@@ -32,6 +33,7 @@ class _LandingScreenState extends State<LandingScreen> {
   late final Lc3Decoder _decoder;
   late final WebsocketService _ws;
   late final AudioPipeline _audioPipeline;
+  late final CalendarService _calendarService;
   late final PhoneAudioService _phoneAudio;
 
   bool _usePhoneMic = false;
@@ -48,6 +50,7 @@ class _LandingScreenState extends State<LandingScreen> {
     _manager = widget.manager ?? G1Manager();
     _decoder = widget.decoder ?? Lc3Decoder();
     _ws = widget.ws ?? WebsocketService();
+    _calendarService = CalendarService();
     _audioPipeline = widget.audioPipeline ??
         AudioPipeline(
           _manager,
@@ -275,6 +278,26 @@ class _LandingScreenState extends State<LandingScreen> {
                         Expanded(
                           child: GlassesConnection(
                             manager: _manager,
+                            onRecordToggle: () async {
+                              if (!_manager.transcription.isActive.value) {
+                                final granted =
+                                    await _calendarService.requestPermission();
+                                if (granted) {
+                                  final events = await _calendarService
+                                      .getUpcomingEvents();
+                                  final activeEvent = _calendarService
+                                      .selectActiveContext(events);
+                                  if (activeEvent != null) {
+                                    final payload = _calendarService
+                                        .buildCalendarPayload(activeEvent);
+                                    _ws.sendCalendarContext(payload);
+                                  }
+                                }
+                                await _startTranscription();
+                              } else {
+                                await _stopTranscription();
+                              }
+                            },
                           ),
                         ),
 

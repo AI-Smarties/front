@@ -33,6 +33,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # Local path dependency
+  device_calendar: ^4.3.3
   even_realities_g1:
     path: packages/even_realities_g1
   flutter:
